@@ -52,7 +52,10 @@ public class Robot extends TimedRobot {
     ADIS16470_IMU m_gyro;
     int timer;
     //non drive motors
-    private CANSparkMax mainSwingarm;
+    private CANSparkMax Joint1;
+    private CANSparkMax Joint2;
+    private CANSparkMax Joint3;
+    private CANSparkMax squezer;
     //tank drive vars
     private DifferentialDrive tankDrive;
     private WPI_TalonFX leftParent;
