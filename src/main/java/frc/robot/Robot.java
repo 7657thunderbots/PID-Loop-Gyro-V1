@@ -1,12 +1,15 @@
 package frc.robot;
-
+ 
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;import java.util.ArrayList;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
@@ -48,6 +51,8 @@ public class Robot extends TimedRobot {
     Joystick m_controller;
     ADIS16470_IMU m_gyro;
     int timer;
+    //non drive motors
+    private CANSparkMax mainSwingarm;
     //tank drive vars
     private DifferentialDrive tankDrive;
     private WPI_TalonFX leftParent;
@@ -68,15 +73,14 @@ public class Robot extends TimedRobot {
     
     private Joystick joy1 = new Joystick(0);
 
-    //private Encoder encoder = new Encoder(0, 1, false, EncodingType.k4X);
+    
     private final double kDriveTick2Feet = 1.0 / 128 * 6 * Math.PI / 12;
 
     private double Speedvar=0.0;
     private double turnerror =0.0;
     private double directionL =0.0;
     private double directionR =0.0;
-    private double anglelast=0.0;
-    private double newangle=0.0;
+    
     private final PowerDistribution m_pdp = new PowerDistribution();
   @Override
   public void robotInit() {
@@ -136,7 +140,10 @@ public class Robot extends TimedRobot {
     double errorSum = 0;
     double lastTimestamp = 0;
     double lastError = 0;
-
+    //joint 1 variables
+    double Bsetpoint = 0;
+    double BerrorSum = 0;
+    double BlastError=0;
   @Override
   public void autonomousPeriodic() {
     // get joystick command
@@ -255,9 +262,30 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
       }
 
-       
+      @Override
+public void teleopInit(){
+  setpoint = 0;
+  errorSum = 0;
+  lastTimestamp = 0;
+  lastError = 0;
+} 
   @Override
-  public void robotPeriodic() {
+  public void teleopPeriodic() {
+   
+    tankDrive.tankDrive(right.getY() * speedMult, left.getY() * speedMult);
+			tankDrive.feedWatchdog(); 
+      
+      // Joint 1 controlled by A & B
+      if (controller2.getAButtonPressed()) {
+        Bsetpoint = 10;
+      } else if (joy1.getRawButton(2)) {
+        Bsetpoint = 0;
+      }
+      // get sensor position
+      double sensorPosition = leftParent.getSelectedSensorPosition() * kDriveTick2Feet;
+
+
     SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
+  
   }
 }
