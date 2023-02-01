@@ -53,9 +53,17 @@ public class Robot extends TimedRobot {
     int timer;
     //non drive motors
     private CANSparkMax Joint1;
+    private RelativeEncoder J1encoder;
+    
     private CANSparkMax Joint2;
+    private RelativeEncoder J2encoder;
+    
     private CANSparkMax Joint3;
+    private RelativeEncoder J3encoder;
+    
     private CANSparkMax squezer;
+    private RelativeEncoder SQencoder;
+
     //tank drive vars
     private DifferentialDrive tankDrive;
     private WPI_TalonFX leftParent;
@@ -85,7 +93,10 @@ public class Robot extends TimedRobot {
     private double directionR =0.0;
     
     private final PowerDistribution m_pdp = new PowerDistribution();
-  @Override
+ 
+ 
+ 
+    @Override
   public void robotInit() {
     m_controller = new Joystick(0);
     
@@ -95,22 +106,32 @@ public class Robot extends TimedRobot {
     
     speedMult = .5;
    
+    //motors that aren't drive
+      squezer = new CANSparkMax(1, MotorType.kBrushless);
+      Joint1 = new CANSparkMax(6, MotorType.kBrushless);
+      Joint2 = new CANSparkMax(7, MotorType.kBrushless);
+      Joint3 = new CANSparkMax(8, MotorType.kBrushless);
     //tankdrive
-    leftParent = new WPI_TalonFX(4);
-		leftChild = new WPI_TalonFX(5);
-		leftParent.setInverted(true);
-		leftChild.follow(leftParent);
-		leftChild.setInverted(true);
-		rightParent = new WPI_TalonFX(3);
-		rightChild = new WPI_TalonFX(2);
-		rightChild.follow(rightParent);
-		tankDrive = new DifferentialDrive(rightParent, leftParent);
+      leftParent = new WPI_TalonFX(4);
+      leftChild = new WPI_TalonFX(5);
+      leftParent.setInverted(true);
+      leftChild.follow(leftParent);
+      leftChild.setInverted(true);
+      rightParent = new WPI_TalonFX(3);
+      rightChild = new WPI_TalonFX(2);
+      rightChild.follow(rightParent);
+      tankDrive = new DifferentialDrive(rightParent, leftParent);
     
     //driveencoders
-		rightParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
-		rightParent.setSelectedSensorPosition(0);
-		leftParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
-		leftParent.setSelectedSensorPosition(0);
+      rightParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
+      rightParent.setSelectedSensorPosition(0);
+      leftParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
+      leftParent.setSelectedSensorPosition(0);
+      
+    J1encoder = Joint1.getEncoder();
+    J2encoder = Joint2.getEncoder();
+    J3encoder = Joint3.getEncoder();
+    SQencoder = squezer.getEncoder();
     
     // MAKE SURE GREEN CONTROLLER IS 0 IN DRIVER STATION!!!!!!!!!
 		left = new Joystick(0);
@@ -138,15 +159,48 @@ public class Robot extends TimedRobot {
     final double bkI = 0.5;
     final double bkD = 0.1;
     final double biLimit = 1;
-  
+    
+
     double setpoint = 0;
     double errorSum = 0;
     double lastTimestamp = 0;
     double lastError = 0;
-    //joint 1 variables
-    double Bsetpoint = 0;
-    double BerrorSum = 0;
-    double BlastError=0;
+    
+    //Joint 1 variables
+    final double J1kP = 0.5;
+    final double J1kI = 0.5;
+    final double J1kD = 0.1;
+    final double J1iLimit = 1;
+    double J1setpoint = 0;
+    double J1errorSum = 0;
+    double J1lastError=0;
+    
+    //Joint 2 variables
+    final double J2kP = 0.5;
+    final double J2kI = 0.5;
+    final double J2kD = 0.1;
+    final double J2iLimit = 1;
+    double J2setpoint = 0;
+    double J2errorSum = 0;
+    double J2lastError=0;
+
+    //Joint 3 variables
+    final double J3kP = 0.5;
+    final double J3kI = 0.5;
+    final double J3kD = 0.1;
+    final double J3iLimit = 1;
+    double J3setpoint = 0;
+    double J3errorSum = 0;
+    double J3lastError=0;
+
+    //squezer variables
+    final double SQkP = 0.5;
+    final double SQkI = 0.5;
+    final double SQkD = 0.1;
+    final double SQiLimit = 1;
+    double SQsetpoint = 0;
+    double SQerrorSum = 0;
+    double SQlastError=0;
   @Override
   public void autonomousPeriodic() {
     // get joystick command
@@ -278,17 +332,88 @@ public void teleopInit(){
     tankDrive.tankDrive(right.getY() * speedMult, left.getY() * speedMult);
 			tankDrive.feedWatchdog(); 
       
-      // Joint 1 controlled by A & B
-      if (controller2.getAButtonPressed()) {
-        Bsetpoint = 10;
-      } else if (joy1.getRawButton(2)) {
-        Bsetpoint = 0;
+      // Joint 1 controlled by left and right triggers
+      if (controller2.getLeftTriggerAxis()>.1) {
+        SQsetpoint = 10;
+        } else if (controller2.getRightTriggerAxis()>.1) {
+        SQsetpoint = 0;
       }
+      if (controller2.getAButton()) {
+        J1setpoint = 10;
+       } else if (controller2.getBButton()) {
+        J1setpoint = 0;
+      }
+      if (controller2.getYButton()) {
+        J2setpoint = 10;
+        } else if (controller2.getXButton()) {
+        J2setpoint = 0;
+      }
+      if(controller2.getPOV()==0){
+        J3setpoint=10;
+        }else if (controller2.getPOV()==180) {
+        J3setpoint=0;
+      }
+      
       // get sensor position
-      double sensorPosition = leftParent.getSelectedSensorPosition() * kDriveTick2Feet;
+      double SQsensorPosition = SQencoder.getPosition();
+      double J1sensorPosition = J1encoder.getPosition();
+      double J2sensorPosition = J2encoder.getPosition();
+      double J3sensorPosition = J3encoder.getPosition();
 
+      // calculations for squezer
+      double SQerror = SQsetpoint - SQsensorPosition;
+      double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-    SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
+      if (Math.abs(SQerror) < SQiLimit) {
+        SQerrorSum += SQerror * dt;
+      }
+
+      double SQerrorRate = (SQerror - SQlastError) / dt;
+      double SQoutputSpeed = SQkP * SQerror + SQkI * SQerrorSum + SQkD * SQerrorRate;
+
+      // output to squezer motor
+      squezer.set(SQoutputSpeed);
+
+      // calculations for Joint 1
+      double J1error = J1setpoint - J1sensorPosition;
+
+      if (Math.abs(J1error) < J1iLimit) {
+        J1errorSum += J1error * dt;
+      }
+
+      double J1errorRate = (J1error - J1lastError) / dt;
+      double J1outputSpeed = J1kP * J1error + J1kI * J1errorSum + J1kD * J1errorRate;
+
+      // output to Joint 1 motor
+      Joint1.set(J1outputSpeed);
+
+      // calculations for Joint 2
+      double J2error = J2setpoint - J2sensorPosition;
+
+      if (Math.abs(J2error) < J2iLimit) {
+        J2errorSum += J2error * dt;
+      }
+
+      double J2errorRate = (J2error - J2lastError) / dt;
+      double J2outputSpeed = J2kP * J2error + J2kI * J2errorSum + J2kD * J2errorRate;
+
+      // output to Joint 2 motor
+      Joint2.set(J2outputSpeed);
+
+      // calculations for Joint 3
+      double J3error = J3setpoint - J3sensorPosition;
+
+      if (Math.abs(J3error) < J3iLimit) {
+        J3errorSum += J3error * dt;
+      }
+
+      double J3errorRate = (J3error - J3lastError) / dt;
+      double J3outputSpeed = J3kP * J3error + J3kI * J3errorSum + J3kD * J3errorRate;
+
+      // output to Joint 3 motor
+      Joint3.set(J3outputSpeed);
+    
+      SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
   
   }
 }
