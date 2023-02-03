@@ -47,7 +47,6 @@ public class Robot extends TimedRobot {
      * This function is run when the robot is first started up and should be used
      * for any initialization code.
      */
-    PWMVictorSPX m_left, m_right;
     Joystick m_controller;
     ADIS16470_IMU m_gyro;
     int timer;
@@ -102,7 +101,6 @@ public class Robot extends TimedRobot {
     
     m_gyro = new ADIS16470_IMU();
    
-    m_right.setInverted(true);
     
     speedMult = .5;
    
