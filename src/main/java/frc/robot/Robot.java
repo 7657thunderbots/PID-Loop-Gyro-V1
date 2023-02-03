@@ -105,7 +105,7 @@ public class Robot extends TimedRobot {
     speedMult = .5;
    
     //motors that aren't drive
-      squezer = new CANSparkMax(9, MotorType.kBrushless);
+      squezer = new CANSparkMax(1, MotorType.kBrushless);
       Joint1 = new CANSparkMax(6, MotorType.kBrushless);
       Joint2 = new CANSparkMax(7, MotorType.kBrushless);
       Joint3 = new CANSparkMax(8, MotorType.kBrushless);
