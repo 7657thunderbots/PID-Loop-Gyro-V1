@@ -1,6 +1,7 @@
 package frc.robot;
  
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -9,12 +10,18 @@ import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.opencv.features2d.FlannBasedMatcher;
+
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.ColorSensorV3;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.motorcontrol.PWMVictorSPX;
@@ -22,6 +29,7 @@ import edu.wpi.first.wpilibj.ADIS16448_IMU;
 import edu.wpi.first.wpilibj.ADIS16470_IMU;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser; 
@@ -33,7 +41,10 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.util.datalog.DataLog;
+import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.PowerDistribution;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -43,11 +54,34 @@ import edu.wpi.first.wpilibj.PowerDistribution;
  * project.
  */
 public class Robot extends TimedRobot {
-    /**
+   
+  /**
+   * Change the I2C port below to match the connection of your color sensor
+   */
+  private final I2C.Port i2cPort = I2C.Port.kOnboard;
+
+  /**
+   * A Rev Color Sensor V3 object is constructed with an I2C port as a 
+   * parameter. The device will be automatically initialized with default 
+   * parameters.
+   */
+  private final ColorSensorV3 m_colorSensor = new ColorSensorV3(i2cPort);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  /**
      * This function is run when the robot is first started up and should be used
      * for any initialization code.
      */
-    PWMVictorSPX m_left, m_right;
     Joystick m_controller;
     ADIS16470_IMU m_gyro;
     int timer;
@@ -81,7 +115,8 @@ public class Robot extends TimedRobot {
 
     private boolean onchargestation= false;
     private boolean chargestationbalance= false;
-    
+    private boolean cone= false;
+    private boolean cube=false;
     private Joystick joy1 = new Joystick(0);
 
     
@@ -93,21 +128,23 @@ public class Robot extends TimedRobot {
     private double directionR =0.0;
     
     private final PowerDistribution m_pdp = new PowerDistribution();
- 
+    DoubleLogEntry myDoubleLog;
  
  
     @Override
   public void robotInit() {
+
+
     m_controller = new Joystick(0);
     
     m_gyro = new ADIS16470_IMU();
    
-    m_right.setInverted(true);
+
     
     speedMult = .5;
-   
+    SmartDashboard.putNumber("J1 encoder", J1encoder.getPosition());
     //motors that aren't drive
-      squezer = new CANSparkMax(1, MotorType.kBrushless);
+      squezer = new CANSparkMax(9, MotorType.kBrushless);
       Joint1 = new CANSparkMax(6, MotorType.kBrushless);
       Joint2 = new CANSparkMax(7, MotorType.kBrushless);
       Joint3 = new CANSparkMax(8, MotorType.kBrushless);
@@ -153,12 +190,12 @@ public class Robot extends TimedRobot {
     final double akP = 0.5;
     final double akI = 0.5;
     final double akD = 0.1;
-    final double aiLimit = 1;
+    final double aiLimit = 5;
  
-    final double bkP = 0.5;
-    final double bkI = 0.5;
-    final double bkD = 0.1;
-    final double biLimit = 1;
+    final double bkP = -0.0225;
+    final double bkI = -0.015;
+    final double bkD = -0.01;
+    final double biLimit = 3;
     
 
     double setpoint = 0;
@@ -167,9 +204,9 @@ public class Robot extends TimedRobot {
     double lastError = 0;
     
     //Joint 1 variables
-    final double J1kP = 0.5;
-    final double J1kI = 0.5;
-    final double J1kD = 0.1;
+    final double J1kP = -0.05;
+    final double J1kI = -0.05;
+    final double J1kD = -0.01;
     final double J1iLimit = 1;
     double J1setpoint = 0;
     double J1errorSum = 0;
@@ -203,53 +240,53 @@ public class Robot extends TimedRobot {
     double SQlastError=0;
   @Override
   public void autonomousPeriodic() {
+    DataLogManager.start();
     // get joystick command
-   if (onchargestation=false){
-        if (joy1.getRawButton(1)) {
-          setpoint = 10;
-        } else if (joy1.getRawButton(2)) {
+  //  if (onchargestation==false){
+  //         setpoint = 5;
+    
+        
+
+  //       // get sensor position
+  //       double sensorPosition = leftParent.getSelectedSensorPosition() * kDriveTick2Feet;
+
+  //       // calculations
+  //       double error = setpoint - sensorPosition;
+  //       double dt = Timer.getFPGATimestamp() - lastTimestamp;
+
+  //       if (Math.abs(error) < aiLimit) {
+  //         errorSum += error * dt;
+  //       }
+
+  //       double errorRate = (error - lastError) / dt;
+
+  //       double outputSpeed = akP * error + akI * errorSum + akD * errorRate;
+
+  //       // output to motors
+  //       Speedvar=outputSpeed;
+
+
+  //       // update last- variables
+  //       lastTimestamp = Timer.getFPGATimestamp();
+  //       lastError = error;
+  //       if (sensorPosition==5){
+  //         onchargestation=true;
+  //         errorSum = 0;
+  //         lastTimestamp = 0;
+  //         lastError = 0;
+
+  //       }
+  //   }
+  if (m_timer.get()<4){
+    Speedvar=-.5;
+  }
+  else if (m_gyro.getYComplementaryAngle()<2.5 && m_gyro.getYComplementaryAngle()>-2.5){
+    chargestationbalance=true;
+    Speedvar=0;}
+
+    else {
           setpoint = 0;
-        }
-
-        // get sensor position
-        double sensorPosition = leftParent.getSelectedSensorPosition() * kDriveTick2Feet;
-
-        // calculations
-        double error = setpoint - sensorPosition;
-        double dt = Timer.getFPGATimestamp() - lastTimestamp;
-
-        if (Math.abs(error) < aiLimit) {
-          errorSum += error * dt;
-        }
-
-        double errorRate = (error - lastError) / dt;
-
-        double outputSpeed = akP * error + akI * errorSum + akD * errorRate;
-
-        // output to motors
-        Speedvar=outputSpeed;
-
-
-        // update last- variables
-        lastTimestamp = Timer.getFPGATimestamp();
-        lastError = error;
-        if (leftParent.getSelectedSensorPosition()==10){
-          onchargestation=true;
-          setpoint = 0;
-          errorSum = 0;
-          lastTimestamp = 0;
-          lastError = 0;
-
-        }
-    }
-      if (onchargestation==true ){
-        if (joy1.getRawButton(1)) {
-          setpoint = 10;
-        } 
-        else if (joy1.getRawButton(2)) {
-          setpoint = 0;
-        }
-
+ 
         // get sensor position
         double sensorPosition = m_gyro.getYComplementaryAngle();
 
@@ -268,26 +305,31 @@ public class Robot extends TimedRobot {
         // output to motors
         Speedvar=outputSpeed;
 
-
         // update last- variables
         lastTimestamp = Timer.getFPGATimestamp();
         lastError = error;
-        if (m_gyro.getYComplementaryAngle()==0){
-          chargestationbalance=true;
-        }
+        
       }
+      
+      
         if (m_gyro.getAngle()>3){
           turnerror = .1;
           }
-          else if (m_gyro.getAngle()<3 && m_gyro.getAngle() >-3){
+          else if (m_gyro.getAngle()<2.5 && m_gyro.getAngle() >-2.5){
           turnerror =0;
           }
           else if (m_gyro.getAngle()<-3){
             turnerror =-.1;
         }
-          
-            directionL= Speedvar;
-            directionR= Speedvar;
+        
+        if (Speedvar>.4){
+          Speedvar=.4;
+          }
+          if (Speedvar<-.4){
+            Speedvar=-.4;}
+
+            directionL= -Speedvar;
+            directionR= -Speedvar;
 
           tankDrive.tankDrive (turnerror+directionL,-turnerror+directionR);
 
@@ -318,6 +360,8 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("setpoint", setpoint);
         SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
       }
+    
+    
 
       @Override
 public void teleopInit(){
@@ -354,66 +398,121 @@ public void teleopInit(){
         J3setpoint=0;
       }
       
-      // get sensor position
-      double SQsensorPosition = SQencoder.getPosition();
-      double J1sensorPosition = J1encoder.getPosition();
-      double J2sensorPosition = J2encoder.getPosition();
-      double J3sensorPosition = J3encoder.getPosition();
+      // // get sensor position
+      // double SQsensorPosition = SQencoder.getPosition();
+      // double J1sensorPosition = J1encoder.getPosition();
+      // double J2sensorPosition = J2encoder.getPosition();
+      // double J3sensorPosition = J3encoder.getPosition();
 
-      // calculations for squezer
-      double SQerror = SQsetpoint - SQsensorPosition;
-      double dt = Timer.getFPGATimestamp() - lastTimestamp;
+      // // calculations for squezer
+      // // double SQerror = SQsetpoint - SQsensorPosition;
+      //  double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-      if (Math.abs(SQerror) < SQiLimit) {
-        SQerrorSum += SQerror * dt;
-      }
+      // if (Math.abs(SQerror) < SQiLimit) {
+      //   SQerrorSum += SQerror * dt;
+      // }
 
-      double SQerrorRate = (SQerror - SQlastError) / dt;
-      double SQoutputSpeed = SQkP * SQerror + SQkI * SQerrorSum + SQkD * SQerrorRate;
+      // double SQerrorRate = (SQerror - SQlastError) / dt;
+      // double SQoutputSpeed = SQkP * SQerror + SQkI * SQerrorSum + SQkD * SQerrorRate;
 
-      // output to squezer motor
-      squezer.set(SQoutputSpeed);
+      // // output to squezer motor
+      // squezer.set(SQoutputSpeed);
 
-      // calculations for Joint 1
-      double J1error = J1setpoint - J1sensorPosition;
+      // //calculations for Joint 1
+      // double J1error = J1setpoint - J1sensorPosition;
 
-      if (Math.abs(J1error) < J1iLimit) {
-        J1errorSum += J1error * dt;
-      }
+      // if (Math.abs(J1error) < J1iLimit) {
+      //   J1errorSum += J1error * dt;
+      // }
 
-      double J1errorRate = (J1error - J1lastError) / dt;
-      double J1outputSpeed = J1kP * J1error + J1kI * J1errorSum + J1kD * J1errorRate;
+      // double J1errorRate = (J1error - J1lastError) / dt;
+      // double J1outputSpeed = J1kP * J1error + J1kI * J1errorSum + J1kD * J1errorRate;
 
-      // output to Joint 1 motor
-      Joint1.set(J1outputSpeed);
-
+      // // output to Joint 1 motor
+      // Joint1.set(J1outputSpeed);
+      // SmartDashboard.putNumber("J1 encoder", J1encoder.getPosition());
       // calculations for Joint 2
-      double J2error = J2setpoint - J2sensorPosition;
+  //     double J2error = J2setpoint - J2sensorPosition;
 
-      if (Math.abs(J2error) < J2iLimit) {
-        J2errorSum += J2error * dt;
-      }
+  //     if (Math.abs(J2error) < J2iLimit) {
+  //       J2errorSum += J2error * dt;
+  //     }
 
-      double J2errorRate = (J2error - J2lastError) / dt;
-      double J2outputSpeed = J2kP * J2error + J2kI * J2errorSum + J2kD * J2errorRate;
+  //     double J2errorRate = (J2error - J2lastError) / dt;
+  //     double J2outputSpeed = J2kP * J2error + J2kI * J2errorSum + J2kD * J2errorRate;
 
-      // output to Joint 2 motor
-      Joint2.set(J2outputSpeed);
+  //     // output to Joint 2 motor
+  //     Joint2.set(J2outputSpeed);
 
-      // calculations for Joint 3
-      double J3error = J3setpoint - J3sensorPosition;
+  //     // calculations for Joint 3
+  //     double J3error = J3setpoint - J3sensorPosition;
 
-      if (Math.abs(J3error) < J3iLimit) {
-        J3errorSum += J3error * dt;
-      }
+  //     if (Math.abs(J3error) < J3iLimit) {
+  //       J3errorSum += J3error * dt;
+  //     }
 
-      double J3errorRate = (J3error - J3lastError) / dt;
-      double J3outputSpeed = J3kP * J3error + J3kI * J3errorSum + J3kD * J3errorRate;
+  //     double J3errorRate = (J3error - J3lastError) / dt;
+  //     double J3outputSpeed = J3kP * J3error + J3kI * J3errorSum + J3kD * J3errorRate;
 
-      // output to Joint 3 motor
-      Joint3.set(J3outputSpeed);
+  //     // output to Joint 3 motor
+  //     Joint3.set(J3outputSpeed);
     
-      SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
+  //     SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
   
-  }
+      /**
+     * The method GetColor() returns a normalized color value from the sensor and can be
+     * useful if outputting the color to an RGB LED or similar. To
+     * read the raw color, use GetRawColor().
+     * 
+     * The color sensor works best when within a few inches from an object in
+     * well lit conditions (the built in LED is a big help here!). The farther
+     * an object is the more light from the surroundings will bleed into the 
+     * measurements and make it difficult to accurately determine its color.
+     */
+    Color detectedColor = m_colorSensor.getColor();
+
+    /**
+     * The sensor returns a raw IR value of the infrared light detected.
+     */
+    double IR = m_colorSensor.getIR();
+
+    /**
+     * Open Smart Dashboard or Shuffleboard to see the color detected by the 
+     * sensor.
+     */
+    SmartDashboard.putNumber("Red", detectedColor.red);
+    SmartDashboard.putNumber("Green", detectedColor.green);
+    SmartDashboard.putNumber("Blue", detectedColor.blue);
+    SmartDashboard.putNumber("IR", IR);
+
+    /**
+     * In addition to RGB IR values, the color sensor can also return an 
+     * infrared proximity value. The chip contains an IR led which will emit
+     * IR pulses and measure the intensity of the return. When an object is 
+     * close the value of the proximity will be large (max 2047 with default
+     * settings) and will approach zero when the object is far away.
+     * 
+     * Proximity can be used to roughly approximate the distance of an object
+     * or provide a threshold for when an object is close enough to provide
+     * accurate color values.
+     */
+    int proximity = m_colorSensor.getProximity();
+
+    SmartDashboard.putNumber("Proximity", proximity);
+if (detectedColor.blue>.25){
+  cube=true;
+cone=false;
+}
+else if(detectedColor.blue<.22){
+  cone=true;
+  cube=false;
+}
+else {
+  cube=false;
+  cone=false;
+}
+SmartDashboard.putBoolean("cube", cube);
+SmartDashboard.putBoolean("cone", cone);
+}
+  
 }
