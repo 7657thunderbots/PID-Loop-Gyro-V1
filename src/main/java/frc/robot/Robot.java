@@ -141,7 +141,7 @@ public class Robot extends TimedRobot {
 
     
     speedMult = .5;
-    SmartDashboard.putNumber("J1 encoder", J1encoder.getPosition());
+    
     //motors that aren't drive
       squezer = new CANSparkMax(9, MotorType.kBrushless);
       Joint1 = new CANSparkMax(6, MotorType.kBrushless);
@@ -169,6 +169,7 @@ public class Robot extends TimedRobot {
     J3encoder = Joint3.getEncoder();
     SQencoder = squezer.getEncoder();
     
+    SmartDashboard.putNumber("J1 encoder", J1encoder.getPosition());
     // MAKE SURE GREEN CONTROLLER IS 0 IN DRIVER STATION!!!!!!!!!
 		left = new Joystick(0);
 		right = new Joystick(1);
@@ -418,7 +419,7 @@ public void teleopInit(){
       // squezer.set(SQoutputSpeed);
 
       // //calculations for Joint 1
-      // double J1error = J1setpoint - J1sensorPosition;
+      // double J1error = fsetpoint - J1sensorPosition;
 
       // if (Math.abs(J1error) < J1iLimit) {
       //   J1errorSum += J1error * dt;
