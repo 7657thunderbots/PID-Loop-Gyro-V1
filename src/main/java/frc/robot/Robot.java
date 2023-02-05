@@ -138,11 +138,7 @@ public class Robot extends TimedRobot {
     m_controller = new Joystick(0);
     
     m_gyro = new ADIS16470_IMU();
-   
-<<<<<<< HEAD
 
-=======
->>>>>>> e2ba5da21d963114c08772dc54faa50fa887b9a8
     
     speedMult = .5;
     SmartDashboard.putNumber("J1 encoder", J1encoder.getPosition());
@@ -518,9 +514,6 @@ SmartDashboard.putBoolean("cube", cube);
 SmartDashboard.putBoolean("cone", cone);
 }
   
-<<<<<<< HEAD
-}
-=======
+
   }
-}
->>>>>>> e2ba5da21d963114c08772dc54faa50fa887b9a8
+
