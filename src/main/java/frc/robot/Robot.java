@@ -11,13 +11,10 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import org.opencv.features2d.FlannBasedMatcher;
-
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.revrobotics.CANSparkMax;
@@ -35,6 +32,8 @@ import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser; 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -44,6 +43,24 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.ADIS16470_IMU;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 
 
 /**
@@ -83,7 +100,7 @@ public class Robot extends TimedRobot {
      * for any initialization code.
      */
     Joystick m_controller;
-    ADIS16470_IMU m_gyro;
+    //ADIS16470_IMU m_gyro;
     int timer;
     //non drive motors
     private CANSparkMax Joint1;
@@ -99,11 +116,11 @@ public class Robot extends TimedRobot {
     private RelativeEncoder SQencoder;
 
     //tank drive vars
-    private DifferentialDrive tankDrive;
-    private WPI_TalonFX leftParent;
-    private WPI_TalonFX leftChild;
-    private WPI_TalonFX rightParent;
-    private WPI_TalonFX rightChild;
+    // private DifferentialDrive tankDrive;
+    // private WPI_TalonFX leftParent;
+    // private WPI_TalonFX leftChild;
+    // private WPI_TalonFX rightParent;
+    // private WPI_TalonFX rightChild;
 
     private double speedMult;
 
@@ -119,7 +136,7 @@ public class Robot extends TimedRobot {
     private boolean cube=false;
     private Joystick joy1 = new Joystick(0);
 
-    
+    private DriveTrain drivetrain;
     private final double kDriveTick2Feet = 1.0 / 128 * 6 * Math.PI / 12;
 
     private double Speedvar=0.0;
@@ -129,15 +146,15 @@ public class Robot extends TimedRobot {
     
     private final PowerDistribution m_pdp = new PowerDistribution();
     DoubleLogEntry myDoubleLog;
- 
- 
+ private DifferentialDriveOdometry mOdometry; 
+
     @Override
   public void robotInit() {
 
 
     m_controller = new Joystick(0);
     
-    m_gyro = new ADIS16470_IMU();
+    //m_gyro = new ADIS16470_IMU();
 
     
     speedMult = .5;
@@ -148,21 +165,23 @@ public class Robot extends TimedRobot {
       Joint2 = new CANSparkMax(7, MotorType.kBrushless);
       Joint3 = new CANSparkMax(8, MotorType.kBrushless);
     //tankdrive
-      leftParent = new WPI_TalonFX(4);
-      leftChild = new WPI_TalonFX(5);
-      leftParent.setInverted(true);
-      leftChild.follow(leftParent);
-      leftChild.setInverted(true);
-      rightParent = new WPI_TalonFX(3);
-      rightChild = new WPI_TalonFX(2);
-      rightChild.follow(rightParent);
-      tankDrive = new DifferentialDrive(rightParent, leftParent);
+      // leftParent = new WPI_TalonFX(4);
+      // leftChild = new WPI_TalonFX(5);
+      // leftParent.setInverted(true);
+      // leftChild.follow(leftParent);
+      // leftChild.setInverted(true);
+      // rightParent = new WPI_TalonFX(3);
+      // rightChild = new WPI_TalonFX(2);
+      // rightChild.follow(rightParent);
+      // tankDrive = new DifferentialDrive(rightParent, leftParent);
+     // This creates our drivetrain subsystem that contains all the motors and motor control code
+     drivetrain = new DriveTrain();
     
     //driveencoders
-      rightParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
-      rightParent.setSelectedSensorPosition(0);
-      leftParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
-      leftParent.setSelectedSensorPosition(0);
+      // rightParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
+      // rightParent.setSelectedSensorPosition(0);
+      // leftParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
+      // leftParent.setSelectedSensorPosition(0);
       
     J1encoder = Joint1.getEncoder();
     J2encoder = Joint2.getEncoder();
@@ -175,14 +194,17 @@ public class Robot extends TimedRobot {
 		right = new Joystick(1);
 		controller2 = new XboxController(2);
   }
-
+  @Override
+  public void disabledInit() {
+    drivetrain.setbrake(true);      
+  }
   @Override
   public void autonomousInit() {
     //encoder.reset();
     errorSum = 0;
     lastError = 0;
     lastTimestamp = Timer.getFPGATimestamp();
-    m_gyro.reset();
+    drivetrain.m_gyro.reset();
     m_timer.reset();
 		m_timer.start();
   }
@@ -280,7 +302,7 @@ public class Robot extends TimedRobot {
   if (m_timer.get()<4){
     Speedvar=-.5;
   }
-  else if (m_gyro.getYComplementaryAngle()<2.5 && m_gyro.getYComplementaryAngle()>-2.5){
+  else if (drivetrain.m_gyro.getYComplementaryAngle()<2.5 && drivetrain.m_gyro.getYComplementaryAngle()>-2.5){
     chargestationbalance=true;
     Speedvar=0;}
 
@@ -288,7 +310,7 @@ public class Robot extends TimedRobot {
           setpoint = 0;
  
         // get sensor position
-        double sensorPosition = m_gyro.getYComplementaryAngle();
+        double sensorPosition = drivetrain.m_gyro.getYComplementaryAngle();
 
         // calculations
         double error = setpoint - sensorPosition;
@@ -312,13 +334,13 @@ public class Robot extends TimedRobot {
       }
       
       
-        if (m_gyro.getAngle()>3){
+        if (drivetrain.m_gyro.getAngle()>3){
           turnerror = .1;
           }
-          else if (m_gyro.getAngle()<2.5 && m_gyro.getAngle() >-2.5){
+          else if (drivetrain.m_gyro.getAngle()<2.5 && drivetrain.m_gyro.getAngle() >-2.5){
           turnerror =0;
           }
-          else if (m_gyro.getAngle()<-3){
+          else if (drivetrain.m_gyro.getAngle()<-3){
             turnerror =-.1;
         }
         
@@ -331,37 +353,41 @@ public class Robot extends TimedRobot {
             directionL= -Speedvar;
             directionR= -Speedvar;
 
-          tankDrive.tankDrive (turnerror+directionL,-turnerror+directionR);
+           drivetrain.tankDrive (turnerror+directionL,-turnerror+directionR);
 
 
         SmartDashboard.putBoolean("On charge Station", onchargestation);
         SmartDashboard.putBoolean("charge station balance", chargestationbalance);
         SmartDashboard.putData("PDP", m_pdp);
-        SmartDashboard.putNumber("tilt angle", m_gyro.getYComplementaryAngle());
-        SmartDashboard.putNumber("voltage",m_pdp.getVoltage());
-        SmartDashboard.putNumber("PDP current", m_pdp.getTotalCurrent());
-        SmartDashboard.putNumber("Total energy", m_pdp.getTotalEnergy());
-        SmartDashboard.putNumber("Total power", m_pdp.getTotalPower());
-        SmartDashboard.putNumber("Current used by: drivemotor right", m_pdp.getCurrent(9));
-        SmartDashboard.putNumber("Current used by: drivemotor right", m_pdp.getCurrent(8));
-        SmartDashboard.putNumber("Current used by: drivemotor left", m_pdp.getCurrent(10));
-        SmartDashboard.putNumber("Current used by: drivemotor left", m_pdp.getCurrent(11));
-        SmartDashboard.putNumber("turn angle",m_gyro.getAngle());
-        SmartDashboard.putNumber("Constant speed left",directionL);
-        SmartDashboard.putNumber("constant speed right", directionR);
-        SmartDashboard.putNumber("error adjustment direction", turnerror);
-        SmartDashboard.putNumber("X acceleration",m_gyro.getAccelX());
-        SmartDashboard.putNumber("Y acceleration",m_gyro.getAccelY());
-        SmartDashboard.putNumber("Z acceleration",m_gyro.getAccelZ());
-        SmartDashboard.putNumber("Gyro Rate",m_gyro.getRate());
-        SmartDashboard.putNumber("filtered x acceleration Angle",m_gyro.getXFilteredAccelAngle() );
-        SmartDashboard.putNumber("filtered y acceleration Angle",m_gyro.getYFilteredAccelAngle() );
-        SmartDashboard.putNumber("X Complimentary angle",m_gyro.getXComplementaryAngle() );
-        SmartDashboard.putNumber("setpoint", setpoint);
-        SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
+        // SmartDashboard.putNumber("tilt angle", m_gyro.getYComplementaryAngle());
+        // SmartDashboard.putNumber("voltage",m_pdp.getVoltage());
+        // SmartDashboard.putNumber("PDP current", m_pdp.getTotalCurrent());
+        // SmartDashboard.putNumber("Total energy", m_pdp.getTotalEnergy());
+        // SmartDashboard.putNumber("Total power", m_pdp.getTotalPower());
+        // SmartDashboard.putNumber("Current used by: drivemotor right", m_pdp.getCurrent(9));
+        // SmartDashboard.putNumber("Current used by: drivemotor right", m_pdp.getCurrent(8));
+        // SmartDashboard.putNumber("Current used by: drivemotor left", m_pdp.getCurrent(10));
+        // SmartDashboard.putNumber("Current used by: drivemotor left", m_pdp.getCurrent(11));
+        // SmartDashboard.putNumber("turn angle",m_gyro.getAngle());
+        // SmartDashboard.putNumber("Constant speed left",directionL);
+        // SmartDashboard.putNumber("constant speed right", directionR);
+        // SmartDashboard.putNumber("error adjustment direction", turnerror);
+        // SmartDashboard.putNumber("X acceleration",m_gyro.getAccelX());
+        // SmartDashboard.putNumber("Y acceleration",m_gyro.getAccelY());
+        // SmartDashboard.putNumber("Z acceleration",m_gyro.getAccelZ());
+        // SmartDashboard.putNumber("Gyro Rate",m_gyro.getRate());
+        // SmartDashboard.putNumber("filtered x acceleration Angle",m_gyro.getXFilteredAccelAngle() );
+        // SmartDashboard.putNumber("filtered y acceleration Angle",m_gyro.getYFilteredAccelAngle() );
+        // SmartDashboard.putNumber("X Complimentary angle",m_gyro.getXComplementaryAngle() );
+        // SmartDashboard.putNumber("setpoint", setpoint);
+      //  SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
       }
     
-    
+      @Override
+      public void robotPeriodic() {   
+        drivetrain.run_drive();
+
+      }
 
       @Override
 public void teleopInit(){
@@ -373,8 +399,8 @@ public void teleopInit(){
   @Override
   public void teleopPeriodic() {
    
-    tankDrive.tankDrive(right.getY() * speedMult, left.getY() * speedMult);
-			tankDrive.feedWatchdog(); 
+    drivetrain.tankDrive(right.getY() * speedMult, left.getY() * speedMult);
+			//tankDrive.feedWatchdog(); 
       
       // Joint 1 controlled by left and right triggers
       if (controller2.getLeftTriggerAxis()>.1) {
@@ -405,7 +431,7 @@ public void teleopInit(){
       // double J3sensorPosition = J3encoder.getPosition();
 
       // // calculations for squezer
-      // // double SQerror = SQsetpoint - SQsensorPosition;
+      //  double SQerror = SQsetpoint - SQsensorPosition;
       //  double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
       // if (Math.abs(SQerror) < SQiLimit) {
@@ -419,7 +445,7 @@ public void teleopInit(){
       // squezer.set(SQoutputSpeed);
 
       // //calculations for Joint 1
-      // double J1error = fsetpoint - J1sensorPosition;
+      // double J1error = J1setpoint - J1sensorPosition;
 
       // if (Math.abs(J1error) < J1iLimit) {
       //   J1errorSum += J1error * dt;
@@ -431,35 +457,36 @@ public void teleopInit(){
       // // output to Joint 1 motor
       // Joint1.set(J1outputSpeed);
       // SmartDashboard.putNumber("J1 encoder", J1encoder.getPosition());
-      // calculations for Joint 2
-  //     double J2error = J2setpoint - J2sensorPosition;
+      // //calculations for Joint 2
+      // double J2error = J2setpoint - J2sensorPosition;
 
-  //     if (Math.abs(J2error) < J2iLimit) {
-  //       J2errorSum += J2error * dt;
-  //     }
+      // if (Math.abs(J2error) < J2iLimit) {
+      //   J2errorSum += J2error * dt;
+      // }
 
-  //     double J2errorRate = (J2error - J2lastError) / dt;
-  //     double J2outputSpeed = J2kP * J2error + J2kI * J2errorSum + J2kD * J2errorRate;
+      // double J2errorRate = (J2error - J2lastError) / dt;
+      // double J2outputSpeed = J2kP * J2error + J2kI * J2errorSum + J2kD * J2errorRate;
 
-  //     // output to Joint 2 motor
-  //     Joint2.set(J2outputSpeed);
+      // // output to Joint 2 motor
+      // Joint2.set(J2outputSpeed);
 
-  //     // calculations for Joint 3
-  //     double J3error = J3setpoint - J3sensorPosition;
+      // // calculations for Joint 3
+      // double J3error = J3setpoint - J3sensorPosition;
 
-  //     if (Math.abs(J3error) < J3iLimit) {
-  //       J3errorSum += J3error * dt;
-  //     }
+      // if (Math.abs(J3error) < J3iLimit) {
+      //   J3errorSum += J3error * dt;
+      // }
 
-  //     double J3errorRate = (J3error - J3lastError) / dt;
-  //     double J3outputSpeed = J3kP * J3error + J3kI * J3errorSum + J3kD * J3errorRate;
+      // double J3errorRate = (J3error - J3lastError) / dt;
+      // double J3outputSpeed = J3kP * J3error + J3kI * J3errorSum + J3kD * J3errorRate;
 
-  //     // output to Joint 3 motor
-  //     Joint3.set(J3outputSpeed);
+      // // output to Joint 3 motor
+      // Joint3.set(J3outputSpeed);
     
-  //     SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
+      // SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
   
-      /**
+      //
+       /**
      * The method GetColor() returns a normalized color value from the sensor and can be
      * useful if outputting the color to an RGB LED or similar. To
      * read the raw color, use GetRawColor().
