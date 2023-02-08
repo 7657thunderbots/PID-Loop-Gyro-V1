@@ -196,7 +196,7 @@ public class Robot extends TimedRobot {
   }
   @Override
   public void disabledInit() {
-    drivetrain.setbrake(true);      
+    drivetrain.setbrake(false);      
   }
   @Override
   public void autonomousInit() {
@@ -214,9 +214,9 @@ public class Robot extends TimedRobot {
     final double akD = 0.1;
     final double aiLimit = 5;
  
-    final double bkP = -0.0225;
-    final double bkI = -0.015;
-    final double bkD = -0.01;
+    final double bkP = -0.008;
+    final double bkI = -0.005;
+    final double bkD = -0.001;
     final double biLimit = 3;
     
 
@@ -253,13 +253,15 @@ public class Robot extends TimedRobot {
     double J3lastError=0;
 
     //squezer variables
-    final double SQkP = 0.5;
-    final double SQkI = 0.5;
-    final double SQkD = 0.1;
+    final double SQkP = 0.05;
+    final double SQkI = 0.05;
+    final double SQkD = 0.01;
     final double SQiLimit = 1;
     double SQsetpoint = 0;
     double SQerrorSum = 0;
     double SQlastError=0;
+    double berror=0;
+    double errorRate=0;
   @Override
   public void autonomousPeriodic() {
     DataLogManager.start();
@@ -299,10 +301,10 @@ public class Robot extends TimedRobot {
 
   //       }
   //   }
-  if (m_timer.get()<4){
-    Speedvar=-.5;
+  if (m_timer.get()<3){
+    Speedvar=-.2;
   }
-  else if (drivetrain.m_gyro.getYComplementaryAngle()<2.5 && drivetrain.m_gyro.getYComplementaryAngle()>-2.5){
+  else if (drivetrain.m_gyro.getYComplementaryAngle()<3 && drivetrain.m_gyro.getYComplementaryAngle()>-3){
     chargestationbalance=true;
     Speedvar=0;}
 
@@ -310,78 +312,84 @@ public class Robot extends TimedRobot {
           setpoint = 0;
  
         // get sensor position
-        double sensorPosition = drivetrain.m_gyro.getYComplementaryAngle();
+        Double sensorPosition = drivetrain.m_gyro.getYComplementaryAngle();
 
         // calculations
-        double error = setpoint - sensorPosition;
+        berror = setpoint - sensorPosition;
         double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-        if (Math.abs(error) < biLimit) {
-          errorSum += error * dt;
+        if (Math.abs(berror) < biLimit) {
+          errorSum += berror * dt;
         }
 
-        double errorRate = (error - lastError) / dt;
+        errorRate = (berror - lastError) / dt;
 
-        double outputSpeed = bkP * error + bkI * errorSum + bkD * errorRate;
+        Double outputSpeed = bkP * berror + bkI * errorSum + bkD * errorRate;
 
         // output to motors
         Speedvar=outputSpeed;
 
         // update last- variables
         lastTimestamp = Timer.getFPGATimestamp();
-        lastError = error;
+        lastError = berror;
         
       }
       
       
         if (drivetrain.m_gyro.getAngle()>3){
-          turnerror = .1;
+          turnerror = .05;
           }
           else if (drivetrain.m_gyro.getAngle()<2.5 && drivetrain.m_gyro.getAngle() >-2.5){
           turnerror =0;
           }
           else if (drivetrain.m_gyro.getAngle()<-3){
-            turnerror =-.1;
+            turnerror =-.05;
         }
         
-        if (Speedvar>.4){
-          Speedvar=.4;
+        if (Speedvar>.2){
+          Speedvar=.2;
           }
-          if (Speedvar<-.4){
-            Speedvar=-.4;}
+          if (Speedvar<-.2){
+            Speedvar=-.2;}
 
             directionL= -Speedvar;
             directionR= -Speedvar;
 
-           drivetrain.tankDrive (turnerror+directionL,-turnerror+directionR);
+           drivetrain.tankDrive (-turnerror+directionL,turnerror+directionR, false);
 
 
         SmartDashboard.putBoolean("On charge Station", onchargestation);
         SmartDashboard.putBoolean("charge station balance", chargestationbalance);
         SmartDashboard.putData("PDP", m_pdp);
-        // SmartDashboard.putNumber("tilt angle", m_gyro.getYComplementaryAngle());
-        // SmartDashboard.putNumber("voltage",m_pdp.getVoltage());
-        // SmartDashboard.putNumber("PDP current", m_pdp.getTotalCurrent());
-        // SmartDashboard.putNumber("Total energy", m_pdp.getTotalEnergy());
-        // SmartDashboard.putNumber("Total power", m_pdp.getTotalPower());
-        // SmartDashboard.putNumber("Current used by: drivemotor right", m_pdp.getCurrent(9));
-        // SmartDashboard.putNumber("Current used by: drivemotor right", m_pdp.getCurrent(8));
-        // SmartDashboard.putNumber("Current used by: drivemotor left", m_pdp.getCurrent(10));
-        // SmartDashboard.putNumber("Current used by: drivemotor left", m_pdp.getCurrent(11));
-        // SmartDashboard.putNumber("turn angle",m_gyro.getAngle());
-        // SmartDashboard.putNumber("Constant speed left",directionL);
-        // SmartDashboard.putNumber("constant speed right", directionR);
-        // SmartDashboard.putNumber("error adjustment direction", turnerror);
-        // SmartDashboard.putNumber("X acceleration",m_gyro.getAccelX());
-        // SmartDashboard.putNumber("Y acceleration",m_gyro.getAccelY());
-        // SmartDashboard.putNumber("Z acceleration",m_gyro.getAccelZ());
-        // SmartDashboard.putNumber("Gyro Rate",m_gyro.getRate());
-        // SmartDashboard.putNumber("filtered x acceleration Angle",m_gyro.getXFilteredAccelAngle() );
-        // SmartDashboard.putNumber("filtered y acceleration Angle",m_gyro.getYFilteredAccelAngle() );
-        // SmartDashboard.putNumber("X Complimentary angle",m_gyro.getXComplementaryAngle() );
-        // SmartDashboard.putNumber("setpoint", setpoint);
-      //  SmartDashboard.putNumber("encoder value", leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
+        SmartDashboard.putNumber("tilt angle", drivetrain.m_gyro.getYComplementaryAngle());
+        SmartDashboard.putNumber("voltage",m_pdp.getVoltage());
+        SmartDashboard.putNumber("PDP current", m_pdp.getTotalCurrent());
+        SmartDashboard.putNumber("Total energy", m_pdp.getTotalEnergy());
+        SmartDashboard.putNumber("Total power", m_pdp.getTotalPower());
+        SmartDashboard.putNumber("Current used by: drivemotor right", m_pdp.getCurrent(9));
+        SmartDashboard.putNumber("Current used by: drivemotor right", m_pdp.getCurrent(8));
+        SmartDashboard.putNumber("Current used by: drivemotor left", m_pdp.getCurrent(10));
+        SmartDashboard.putNumber("Current used by: drivemotor left", m_pdp.getCurrent(11));
+        SmartDashboard.putNumber("turn angle",drivetrain.m_gyro.getAngle());
+        SmartDashboard.putNumber("Constant speed left",directionL);
+        SmartDashboard.putNumber("constant speed right", directionR);
+        SmartDashboard.putNumber("error adjustment direction", turnerror);
+        SmartDashboard.putNumber("X acceleration",drivetrain.m_gyro.getAccelX());
+        SmartDashboard.putNumber("Y acceleration",drivetrain.m_gyro.getAccelY());
+        SmartDashboard.putNumber("Z acceleration",drivetrain.m_gyro.getAccelZ());
+        SmartDashboard.putNumber("Gyro Rate",drivetrain.m_gyro.getRate());
+        SmartDashboard.putNumber("filtered x acceleration Angle",drivetrain.m_gyro.getXFilteredAccelAngle() );
+        SmartDashboard.putNumber("filtered y acceleration Angle",drivetrain.m_gyro.getYFilteredAccelAngle() );
+        SmartDashboard.putNumber("X Complimentary angle",drivetrain.m_gyro.getXComplementaryAngle() );
+        SmartDashboard.putNumber("setpoint", setpoint);
+       //SmartDashboard.putNumber("encoder value", drivetrain.leftParent.getSelectedSensorPosition() * kDriveTick2Feet);
+        SmartDashboard.putNumber("error sum", errorSum);
+        SmartDashboard.putNumber("last error", lastError);
+        SmartDashboard.putNumber("error", berror);
+        SmartDashboard.putNumber("error rate",errorRate);
+        SmartDashboard.putNumber("turn error", turnerror);
       }
+
     
       @Override
       public void robotPeriodic() {   
@@ -399,7 +407,7 @@ public void teleopInit(){
   @Override
   public void teleopPeriodic() {
    
-    drivetrain.tankDrive(right.getY() * speedMult, left.getY() * speedMult);
+    drivetrain.tankDrive(right.getY() * speedMult, left.getY() * speedMult, false);
 			//tankDrive.feedWatchdog(); 
       
       // Joint 1 controlled by left and right triggers
@@ -425,24 +433,24 @@ public void teleopInit(){
       }
       
       // // get sensor position
-      // double SQsensorPosition = SQencoder.getPosition();
+      double SQsensorPosition = SQencoder.getPosition();
       // double J1sensorPosition = J1encoder.getPosition();
       // double J2sensorPosition = J2encoder.getPosition();
       // double J3sensorPosition = J3encoder.getPosition();
 
       // // calculations for squezer
-      //  double SQerror = SQsetpoint - SQsensorPosition;
-      //  double dt = Timer.getFPGATimestamp() - lastTimestamp;
+       double SQerror = SQsetpoint - SQsensorPosition;
+       double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-      // if (Math.abs(SQerror) < SQiLimit) {
-      //   SQerrorSum += SQerror * dt;
-      // }
+      if (Math.abs(SQerror) < SQiLimit) {
+        SQerrorSum += SQerror * dt;
+      }
 
-      // double SQerrorRate = (SQerror - SQlastError) / dt;
-      // double SQoutputSpeed = SQkP * SQerror + SQkI * SQerrorSum + SQkD * SQerrorRate;
+      double SQerrorRate = (SQerror - SQlastError) / dt;
+      double SQoutputSpeed = SQkP * SQerror + SQkI * SQerrorSum + SQkD * SQerrorRate;
 
-      // // output to squezer motor
-      // squezer.set(SQoutputSpeed);
+      // output to squezer motor
+      squezer.set(SQoutputSpeed);
 
       // //calculations for Joint 1
       // double J1error = J1setpoint - J1sensorPosition;
@@ -544,4 +552,3 @@ SmartDashboard.putBoolean("cone", cone);
   
 
   }
-

@@ -1,7 +1,3 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -230,10 +226,11 @@ public void setbrake (boolean enable){
    *
    * @param left  the commanded left side
    * @param right the commanded right side
+   * @param b
    */
-  public void tankDrive(double left, double right) {
+  public void tankDrive(double left, double right, boolean b) {
 
-    m_drive.tankDrive(left, right);
+    m_drive.tankDrive(left, right, false);
   }
 
   /**
