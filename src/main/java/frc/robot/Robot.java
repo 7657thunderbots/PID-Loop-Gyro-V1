@@ -160,10 +160,10 @@ public class Robot extends TimedRobot {
     speedMult = .5;
     
     //motors that aren't drive
-      squezer = new CANSparkMax(9, MotorType.kBrushless);
+      squezer = new CANSparkMax(8, MotorType.kBrushless);
       Joint1 = new CANSparkMax(6, MotorType.kBrushless);
       Joint2 = new CANSparkMax(7, MotorType.kBrushless);
-      Joint3 = new CANSparkMax(8, MotorType.kBrushless);
+      Joint3 = new CANSparkMax(9, MotorType.kBrushless);
     //tankdrive
       // leftParent = new WPI_TalonFX(4);
       // leftChild = new WPI_TalonFX(5);
@@ -306,6 +306,7 @@ public class Robot extends TimedRobot {
   }
   else if (drivetrain.m_gyro.getYComplementaryAngle()<3 && drivetrain.m_gyro.getYComplementaryAngle()>-3){
     chargestationbalance=true;
+    drivetrain.setbrake(true);
     Speedvar=0;}
 
     else {
@@ -388,6 +389,7 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("error", berror);
         SmartDashboard.putNumber("error rate",errorRate);
         SmartDashboard.putNumber("turn error", turnerror);
+        SmartDashboard.putNumber("Squezer", SQencoder.getPosition());
       }
 
     
@@ -431,7 +433,7 @@ public void teleopInit(){
         }else if (controller2.getPOV()==180) {
         J3setpoint=0;
       }
-      
+    
       // // get sensor position
       double SQsensorPosition = SQencoder.getPosition();
       // double J1sensorPosition = J1encoder.getPosition();
