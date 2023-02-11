@@ -61,7 +61,8 @@ import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
-
+import edu.wpi.first.wpilibj.PneumaticHub;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -89,7 +90,11 @@ public class Robot extends TimedRobot {
   
   
   
-  
+  private static final int PH_CAN_ID = 1;
+  private static int forwardChannel =0;
+  private static int reverseChannel =1;
+  PneumaticHub m_pH = new PneumaticHub(PH_CAN_ID);
+  DoubleSolenoid m_doubleSolenoid = m_pH.makeDoubleSolenoid(forwardChannel,reverseChannel);
   
   
   
@@ -150,7 +155,13 @@ public class Robot extends TimedRobot {
 
     @Override
   public void robotInit() {
-
+    // Add buttons to set the double
+    SmartDashboard.setDefaultBoolean("Set Off", false);
+    SmartDashboard.setDefaultBoolean("Set Forward", false);
+    SmartDashboard.setDefaultBoolean("Set Reverse", false);
+    // Add buttons to enable/disable the compressor
+    SmartDashboard.setDefaultBoolean("Enable Compressor Digital", false);
+    SmartDashboard.setDefaultBoolean("Disable Compressor", false);
 
     m_controller = new Joystick(0);
     
@@ -160,10 +171,10 @@ public class Robot extends TimedRobot {
     speedMult = .5;
     
     //motors that aren't drive
-      squezer = new CANSparkMax(8, MotorType.kBrushless);
+      squezer = new CANSparkMax(9, MotorType.kBrushless);
       Joint1 = new CANSparkMax(6, MotorType.kBrushless);
       Joint2 = new CANSparkMax(7, MotorType.kBrushless);
-      Joint3 = new CANSparkMax(9, MotorType.kBrushless);
+      Joint3 = new CANSparkMax(8, MotorType.kBrushless);
     //tankdrive
       // leftParent = new WPI_TalonFX(4);
       // leftChild = new WPI_TalonFX(5);
@@ -194,12 +205,16 @@ public class Robot extends TimedRobot {
 		right = new Joystick(1);
 		controller2 = new XboxController(2);
   }
-  @Override
-  public void disabledInit() {
-    drivetrain.setbrake(false);      
-  }
+  
+  
   @Override
   public void autonomousInit() {
+   
+   
+   
+   
+   
+   
     //encoder.reset();
     errorSum = 0;
     lastError = 0;
@@ -396,7 +411,62 @@ public class Robot extends TimedRobot {
       @Override
       public void robotPeriodic() {   
         drivetrain.run_drive();
+        if (squezer.get()>0){
+          m_doubleSolenoid.set(DoubleSolenoid.Value.kForward);
+          
+        }
+         /**
+     * Get the state of the solenoid.
+     *
+     * This is just a switch case to better display it on Shuffleboard.
+     */
+      switch (m_doubleSolenoid.get()) {
+      case kOff:
+        SmartDashboard.putString("Get Solenoid", "kOff");
+        break;
+      case kForward:
+        SmartDashboard.putString("Get Solenoid", "kForward");
+        break;
+      case kReverse:
+        SmartDashboard.putString("Get Solenoid", "kReverse");
+        break;
+      default:
+        SmartDashboard.putString("Get Solenoid", "N/A");
+        break;
+      }
 
+        /**
+        *   Get digital pressure switch state and display on Shuffleboard
+        */
+        SmartDashboard.putBoolean("Digital Pressure Switch",
+        m_pH.getPressureSwitch());
+            /**
+            * Get compressor running status and display on Shuffleboard.
+            */
+            SmartDashboard.putBoolean("Compressor Running", m_pH.getCompressor());
+
+            // Enable Compressor Digital button
+            if (SmartDashboard.getBoolean("Enable Compressor Digital", false)) {
+            SmartDashboard.putBoolean("Enable Compressor Digital", false);
+
+            /**
+            * Enable the compressor with digital sensor control.
+            *
+            * This will make the compressor run whenever the pressure switch is closed.
+            * If open, (disconnected or reached max pressure), the compressor will shut
+            * off.
+            */
+            m_pH.enableCompressorDigital();
+            }
+            // Disable Compressor button
+            if (SmartDashboard.getBoolean("Disable Compressor", false)) {
+              SmartDashboard.putBoolean("Disable Compressor", false);
+          
+              /**
+              * Disable the compressor.
+              */
+              m_pH.disableCompressor();
+              }
       }
 
       @Override
@@ -405,56 +475,88 @@ public void teleopInit(){
   errorSum = 0;
   lastTimestamp = 0;
   lastError = 0;
+SQsetpoint=0;
+m_doubleSolenoid.set(DoubleSolenoid.Value.kOff);
 } 
   @Override
   public void teleopPeriodic() {
-   
+   SmartDashboard.putNumber("sq encoder", SQencoder.getPosition());
     drivetrain.tankDrive(right.getY() * speedMult, left.getY() * speedMult, false);
 			//tankDrive.feedWatchdog(); 
       
       // Joint 1 controlled by left and right triggers
-      if (controller2.getLeftTriggerAxis()>.1) {
-        SQsetpoint = 10;
-        } else if (controller2.getRightTriggerAxis()>.1) {
-        SQsetpoint = 0;
-      }
+       if (controller2.getLeftTriggerAxis()>.1) {
+         SQsetpoint = 10;
+       } 
+         else if (controller2.getRightTriggerAxis()>.1) {
+         SQsetpoint = 0;
+       }
+
+      
+      
+      
       if (controller2.getAButton()) {
         J1setpoint = 10;
-       } else if (controller2.getBButton()) {
+        m_doubleSolenoid.set(DoubleSolenoid.Value.kReverse);
+       } 
+       else if (controller2.getBButton()) {
+        m_doubleSolenoid.set(DoubleSolenoid.Value.kForward);
         J1setpoint = 0;
+      
       }
-      if (controller2.getYButton()) {
-        J2setpoint = 10;
-        } else if (controller2.getXButton()) {
-        J2setpoint = 0;
-      }
-      if(controller2.getPOV()==0){
-        J3setpoint=10;
-        }else if (controller2.getPOV()==180) {
-        J3setpoint=0;
-      }
-    
-      // // get sensor position
-      double SQsensorPosition = SQencoder.getPosition();
-      // double J1sensorPosition = J1encoder.getPosition();
-      // double J2sensorPosition = J2encoder.getPosition();
-      // double J3sensorPosition = J3encoder.getPosition();
+      // if (controller2.getYButton()) {
+      //   J2setpoint = 10;
+      //   } else if (controller2.getXButton()) {
+      //   J2setpoint = 0;
+      // }
+      // if(controller2.getPOV()==0){
+      //   J3setpoint=10;
+      //   }else if (controller2.getPOV()==180) {
+      //   J3setpoint=0;
+      // }
+      
+double error = SQsetpoint-SQencoder.getPosition();
+    double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-      // // calculations for squezer
-       double SQerror = SQsetpoint - SQsensorPosition;
-       double dt = Timer.getFPGATimestamp() - lastTimestamp;
+    if (Math.abs(error) < SQiLimit) {
+      errorSum += error * dt;
+    }
 
-      if (Math.abs(SQerror) < SQiLimit) {
-        SQerrorSum += SQerror * dt;
-      }
+    double errorRate = (error - lastError) / dt;
 
-      double SQerrorRate = (SQerror - SQlastError) / dt;
-      double SQoutputSpeed = SQkP * SQerror + SQkI * SQerrorSum + SQkD * SQerrorRate;
+    double output = SQkP * error + SQkI * errorSum + SQkD * errorRate;
 
-      // output to squezer motor
-      squezer.set(SQoutputSpeed);
+    // output to motors
+  
+ squezer.set(output);
 
-      // //calculations for Joint 1
+    // update last- variables
+    lastTimestamp = Timer.getFPGATimestamp();
+    lastError = error;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      // // //calculations for Joint 1
       // double J1error = J1setpoint - J1sensorPosition;
 
       // if (Math.abs(J1error) < J1iLimit) {
@@ -467,7 +569,7 @@ public void teleopInit(){
       // // output to Joint 1 motor
       // Joint1.set(J1outputSpeed);
       // SmartDashboard.putNumber("J1 encoder", J1encoder.getPosition());
-      // //calculations for Joint 2
+      // // //calculations for Joint 2
       // double J2error = J2setpoint - J2sensorPosition;
 
       // if (Math.abs(J2error) < J2iLimit) {
@@ -550,7 +652,49 @@ else {
 }
 SmartDashboard.putBoolean("cube", cube);
 SmartDashboard.putBoolean("cone", cone);
+ 
+
+
+
+// // Set Off Button
+//  if (SmartDashboard.getBoolean("Set Off", false)) {
+//   SmartDashboard.putBoolean("Set Off", false);
+
+//   /**
+//    * Set the double solenoid to OFF.
+//    *
+//    * This will set both the forward and reverse solenoid channels to false.
+//    */
+//   m_doubleSolenoid.set(DoubleSolenoid.Value.kOff);
+// }
+
+// // Set Forward button
+// if (SmartDashboard.getBoolean("Set Forward", false)) {
+//   SmartDashboard.putBoolean("Set Forward", false);
+
+//   /**
+//    * Set the double solenoid direction to FORWARD.
+//    *
+//    * This will set the forward solenoid channel to true and the reverse
+//    * solenoid channel to false.
+//    */
+//   m_doubleSolenoid.set(DoubleSolenoid.Value.kForward);
+// }
+
+// // Set Reverse button
+// if (SmartDashboard.getBoolean("Set Reverse", false)) {
+//   SmartDashboard.putBoolean("Set Reverse", false);
+
+//   /**
+//    * Set the double solenoid direction to REVERSE.
+//    *
+//    * This will set the forward solenoid channel to false and the reverse
+//    * solenoid channel to true.
+//    */
+//   m_doubleSolenoid.set(DoubleSolenoid.Value.kReverse);
+// }
+
+
 }
   
-
-  }
+}
