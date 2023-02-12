@@ -412,7 +412,7 @@ public class Robot extends TimedRobot {
       public void robotPeriodic() {   
         drivetrain.run_drive();
         if (squezer.get()>0){
-          m_doubleSolenoid.set(DoubleSolenoid.Value.kForward);
+        
           
         }
          /**
