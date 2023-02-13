@@ -34,9 +34,17 @@ public class Robot extends TimedRobot {
 
    private turnadjust turn;
     
+   private Pneumatics pneumatics;
+
+   private color_sensor color_sensor;
+
+   private Auto1 auto1;
+
+   private Auto2_balance auto2_balance;
+
+   private Auto3 auto3;
    
-    
-    private final double kDriveTick2Feet = 1.0 / 128 * 6 * Math.PI / 12;
+   private final double kDriveTick2Feet = 1.0 / 128 * 6 * Math.PI / 12;
 
     @Override
   public void robotInit() {
@@ -59,6 +67,16 @@ public class Robot extends TimedRobot {
 
      turn = new turnadjust();
   
+     pneumatics = new Pneumatics();
+
+     color_sensor = new color_sensor();
+
+     auto1 = new Auto1();
+    
+     auto2_balance = new Auto2_balance();
+    
+     auto3 = new Auto3();
+
     // MAKE SURE GREEN CONTROLLER IS 0 IN DRIVER STATION!!!!!!!!!
 		left = new Joystick(0);
 		right = new Joystick(1);
@@ -80,10 +98,6 @@ public class Robot extends TimedRobot {
 		m_timer.start();
   }
 
-    final double akP = 0.5;
-    final double akI = 0.5;
-    final double akD = 0.1;
-    final double aiLimit = 5;
   @Override
   public void autonomousPeriodic() {
     DataLogManager.start();
@@ -93,58 +107,24 @@ public class Robot extends TimedRobot {
     else{
       balancing.BalancingRun();
     }
-    // get joystick command
-  //  if (onchargestation==false){
-  //         setpoint = 5;
-    
-        
 
-  //       // get sensor position
-  //       double sensorPosition = leftParent.getSelectedSensorPosition() * kDriveTick2Feet;
-
-  //       // calculations
-  //       double error = setpoint - sensorPosition;
-  //       double dt = Timer.getFPGATimestamp() - lastTimestamp;
-
-  //       if (Math.abs(error) < aiLimit) {
-  //         errorSum += error * dt;
-  //       }
-
-  //       double errorRate = (error - lastError) / dt;
-
-  //       double outputSpeed = akP * error + akI * errorSum + akD * errorRate;
-
-  //       // output to motors
-  //       Speedvar=outputSpeed;
-
-
-  //       // update last- variables
-  //       lastTimestamp = Timer.getFPGATimestamp();
-  //       lastError = error;
-  //       if (sensorPosition==5){
-  //         onchargestation=true;
-  //         errorSum = 0;
-  //         lastTimestamp = 0;
-  //         lastError = 0;
-
-  //       }
-  //   }
-          turn.turnadjust_run();
-           drivetrain.tankDrive ( -turn.turnerror + balancing.Speedvar, turn.turnerror+ balancing.Speedvar, false);
+   turn.turnadjust_run();
+   drivetrain.tankDrive ( -turn.turnerror + balancing.Speedvar, turn.turnerror+ balancing.Speedvar, false);
 
   }
-      @Override
+
+@Override
 public void teleopInit(){
 } 
 
-  @Override
+@Override
   public void teleopPeriodic() {
     drivetrain.tankDrive(right.getY() * speedMult, left.getY() * speedMult, false);
 
       // Hand controlled by left and right triggers
        if (controller2.getLeftTriggerAxis()>.1) {
          Hand.hsetpoint = 10;
-       } 
+        } 
          else if (controller2.getRightTriggerAxis()>.1) {
          Hand.hsetpoint=0;
        }
