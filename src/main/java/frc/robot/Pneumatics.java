@@ -13,14 +13,14 @@ public class Pneumatics {
     private static final int PH_CAN_ID = 1;
     PneumaticHub m_pH = new PneumaticHub(PH_CAN_ID);
     
-    DoubleSolenoid m_doubleSolenoid = m_pH.makeDoubleSolenoid(forwardChannel1,reverseChannel1);
-    DoubleSolenoid doubleSolenoid = m_pH.makeDoubleSolenoid(forwardChannel2,reverseChannel2);
+    DoubleSolenoid doubleSolenoid1 = m_pH.makeDoubleSolenoid(0,1);
+    DoubleSolenoid mdoubleSolenoid = m_pH.makeDoubleSolenoid(15,14);
     public Pneumatics(){  
-    
+      doubleSolenoid1.set(DoubleSolenoid.Value.kForward);
     }
 
     public void Run_Pneumatics(){
-        switch (m_doubleSolenoid.get()) {
+        switch (doubleSolenoid1.get()) {
             case kOff:
               SmartDashboard.putString("Get Solenoid", "kOff");
               break;
@@ -48,7 +48,7 @@ public class Pneumatics {
               }
     
 
-                switch (doubleSolenoid.get()) {
+                switch (mdoubleSolenoid.get()) {
                 case kOff:
                   SmartDashboard.putString("Get Solenoid", "kOff");
                   break;
@@ -62,5 +62,5 @@ public class Pneumatics {
                   SmartDashboard.putString("Get Solenoid", "N/A");
                   break;
                 } 
-    }
+              }
 }

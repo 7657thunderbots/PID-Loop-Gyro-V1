@@ -55,10 +55,10 @@ public class DriveTrain  {
    */
   final int kUnitsPerRevolution = 2048; /* this is constant for Talon FX */
   private final int kCountsPerRev = 2048;  //Encoder counts per revolution of the motor shaft.
-	private final double kSensorGearRatio = 1; //Gear ratio is the ratio between the *encoder* and the wheels.  On the AndyMark drivetrain, encoders mount 1:1 with the gearbox shaft.
-	private final double kGearRatio = 10.71; //Switch kSensorGearRatio to this gear ratio if encoder is on the motor instead of on the gearbox.
-	private final double kWheelRadiusInches = 3;
-	private final int k100msPerSecond = 10;
+  private final double kSensorGearRatio = 1; //Gear ratio is the ratio between the *encoder* and the wheels.  On the AndyMark drivetrain, encoders mount 1:1 with the gearbox shaft.
+  private final double kGearRatio = 10.71; //Switch kSensorGearRatio to this gear ratio if encoder is on the motor instead of on the gearbox.
+  private final double kWheelRadiusInches = 3;
+  private final int k100msPerSecond = 10;
   private final double chassiswheelbase = 0.546;
 
   /** electic brake during neutral */
@@ -141,16 +141,16 @@ public class DriveTrain  {
 public void setbrake (boolean enable){
 
   if (enable) { 
-  leftChild.setNeutralMode(kBrakeMode);
-  leftParent.setNeutralMode(kBrakeMode);
-  rightChild.setNeutralMode(kBrakeMode);
-  rightParent.setNeutralMode(kBrakeMode);
+  leftChild.setNeutralMode(kBrakeDurNeutral);
+  leftParent.setNeutralMode(kBrakeDurNeutral);
+  rightChild.setNeutralMode(kBrakeDurNeutral);
+  rightParent.setNeutralMode(kBrakeDurNeutral);
   }
   else{
-    leftChild.setNeutralMode(kBrakeDurNeutral);
-    leftParent.setNeutralMode(kBrakeDurNeutral);
-    rightChild.setNeutralMode(kBrakeDurNeutral);
-    rightParent.setNeutralMode(kBrakeDurNeutral);
+    leftChild.setNeutralMode(kBrakeMode);
+    leftParent.setNeutralMode(kBrakeMode);
+    rightChild.setNeutralMode(kBrakeMode);
+    rightParent.setNeutralMode(kBrakeMode);
 
   }
 }
@@ -306,10 +306,10 @@ public void setbrake (boolean enable){
 
 
   private double nativeUnitsToDistanceMeters(double sensorCounts){
-		double motorRotations = (double)sensorCounts / kCountsPerRev;
-		double wheelRotations = motorRotations / kSensorGearRatio;
-		double positionMeters = wheelRotations * (2 * Math.PI * Units.inchesToMeters(kWheelRadiusInches));
-		return positionMeters;
-	}
+    double motorRotations = (double)sensorCounts / kCountsPerRev;
+    double wheelRotations = motorRotations / kSensorGearRatio;
+    double positionMeters = wheelRotations * (2 * Math.PI * Units.inchesToMeters(kWheelRadiusInches));
+    return positionMeters;
+  }
 
 }

@@ -1,45 +1,60 @@
 package frc.robot;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 
 
 public class Hand {
-    private final double hkP = 0.05;
+  int timer;
+    public double hkP = 0.05;
     private final double hkI = 0.05;
-   private final double hkD = 0.01;
-    private final double hiLimit = 1;
-    private double herrorSum = 0;
-   private double hlastError=0;
-    public CANSparkMax handmax;
-    public RelativeEncoder handencoder;
+   private final double hkD = 0.001;
+    private final double hiLimit = 0;
+    private double EerrorSum = 0;
+   private double ElastError=0;
+    public CANSparkMax hand;
+    public RelativeEncoder hande;
     private double lastTimestamp = 0;
     public double hsetpoint =0;
+    public final Timer wait = new Timer();
+
 public Hand() {
+    hand = new CANSparkMax(7, MotorType.kBrushless);
+    hande = hand.getEncoder();
     
-    handmax = new CANSparkMax(9, MotorType.kBrushless);
-    
+
 }
-public void HandRun(){
-    
-    double herror = hsetpoint-handencoder.getPosition();
+public void Hand_Run(){
+   if(hsetpoint>0&& wait.get()>.5){
+    hand.set(0);
+   }
+  else if(Math.abs(hsetpoint-hande.getPosition())<2) {
+    hand.set(0);
+   }
+   else if (Math.abs(hsetpoint-hande.getPosition())>1){
+
+    double Eerror = hsetpoint-hande.getPosition();
     double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-    if (Math.abs(herror) < hiLimit) {
-      herrorSum += herror * dt;
+    if (Math.abs(Eerror) < hiLimit) {
+      EerrorSum += Eerror * dt;
     }
 
-    double herrorRate = (herror - hlastError) / dt;
+    double EerrorRate = (Eerror - ElastError) / dt;
 
-    double houtput = hkP * herror + hkI * herrorSum + hkD * herrorRate;
-
-    // output to motors
+    double houtput = hkP * Eerror + hkI * EerrorSum + hkD * EerrorRate;
   
- handmax.set(houtput);
+    hand.set(houtput);
 
     // update last- variables
      lastTimestamp = Timer.getFPGATimestamp();
-    hlastError = herror; 
+    ElastError = Eerror; 
+}
+SmartDashboard.putNumber("Hand",hande.getPosition());
 }
 }
+

@@ -27,7 +27,7 @@ public class Balancing {
 
 
     public void BalancingRun(){
-        if (drivetrain.m_gyro.getYComplementaryAngle()<3 && drivetrain.m_gyro.getYComplementaryAngle()>-3){
+        if (drivetrain.m_gyro.getAngle()<3 && drivetrain.m_gyro.getAngle()>-3){
             chargestationbalance=true;
             drivetrain.setbrake(true);
             Speedvar=0;}
@@ -36,7 +36,7 @@ public class Balancing {
                 setpoint = 0;
         
                 // get sensor position
-                Double sensorPosition = drivetrain.m_gyro.getYComplementaryAngle();
+                Double sensorPosition = drivetrain.m_gyro.getAngle();
         
                 // calculations
                 berror = setpoint - sensorPosition;
@@ -51,7 +51,7 @@ public class Balancing {
                 Double outputSpeed = bkP * berror + bkI * errorSum + bkD * errorRate;
         
                 // output to motors
-                Speedvar=outputSpeed;
+                Speedvar=(-1*outputSpeed);
         
                 // update last- variables
                 lastTimestamp = Timer.getFPGATimestamp();
@@ -65,7 +65,7 @@ public class Balancing {
                         Speedvar=-.2;
                 }
 
-
+        
 
     }
 }

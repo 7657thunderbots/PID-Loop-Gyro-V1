@@ -1,45 +1,48 @@
+
 package frc.robot;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 
 
-public class Shoulder {
-    private final double SkP = 0.05;
-    private final double SkI = 0.05;
-   private final double SkD = 0.01;
-    private final double SiLimit = 1;
-    private double SerrorSum = 0;
+public class Shoulder{
+    public double skP = 0.05;
+    private final double skI = 0.05;
+   private final double skD = 0.001;
+    private final double siLimit = 0;
+    private double EerrorSum = 0;
    private double SlastError=0;
-    public CANSparkMax Shouldermax;
-    public RelativeEncoder Shoulderencoder;
+    public CANSparkMax shoulder;
+    public RelativeEncoder shouldere;
     private double lastTimestamp = 0;
     public double Ssetpoint =0;
 public Shoulder() {
-    
-    Shouldermax = new CANSparkMax(9, MotorType.kBrushless);
-    
+    shoulder = new CANSparkMax(8, MotorType.kBrushless);
+    shouldere = shoulder.getEncoder();
 }
-public void ShoulderRun(){
-    
-    double Serror = Ssetpoint-Shoulderencoder.getPosition();
+public void Shoulder_Run(){
+    double Eerror = Ssetpoint- shouldere.getPosition();
     double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-    if (Math.abs(Serror) < SiLimit) {
-      SerrorSum += Serror * dt;
+    if (Math.abs(Eerror) < siLimit) {
+      EerrorSum += Eerror * dt;
     }
 
-    double SerrorRate = (Serror - SlastError) / dt;
+    double EerrorRate = (Eerror - SlastError) / dt;
 
-    double Soutput = SkP * Serror + SkI * SerrorSum + SkD * SerrorRate;
+    double houtput = skP * Eerror + skI * EerrorSum + skD * EerrorRate;
 
-    // output to motors
-  
-    Shouldermax.set(Soutput);
+    
+    shoulder.set(houtput);
 
     // update last- variables
      lastTimestamp = Timer.getFPGATimestamp();
-    SlastError = Serror; 
+    SlastError = Eerror; 
+    SmartDashboard.putNumber("Shoulder",shouldere.getPosition());
 }
 }
+

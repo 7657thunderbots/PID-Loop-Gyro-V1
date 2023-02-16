@@ -30,24 +30,11 @@ public class SmartDashboards {
     private color_sensor color;
 
    public SmartDashboards(){
-      drivetrain = new DriveTrain();
       
-      elbow = new Elbow();
- 
-      wrist = new Wrist();
- 
-      shoulder = new Shoulder();
- 
-      Hand = new Hand();
-      
-      balancing = new Balancing();
- 
-      turn = new turnadjust();
-
-      color = new color_sensor();
    }
 
    public void SmartDashboard_run(){
+
     SmartDashboard.putBoolean("On charge Station", robot.onchargestation);
     SmartDashboard.putBoolean("charge station balance",balancing.chargestationbalance);
     SmartDashboard.putData("PDP", m_pdp);
