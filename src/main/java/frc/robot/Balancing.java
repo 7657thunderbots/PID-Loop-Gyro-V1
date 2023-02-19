@@ -3,7 +3,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Timer;
 
 public class Balancing {
-    private DriveTrain drivetrain; 
+private DriveTrain driveTrain;
     
     public double Speedvar=0.0;
     
@@ -22,21 +22,22 @@ public class Balancing {
     final double biLimit = 3;
 
     public Balancing() {   
-    
+
     }   
 
 
     public void BalancingRun(){
-        if (drivetrain.m_gyro.getAngle()<3 && drivetrain.m_gyro.getAngle()>-3){
+        driveTrain.run_drive();
+        if (driveTrain.m_gyro.getYComplementaryAngle()<3 && driveTrain.m_gyro.getYComplementaryAngle()>-3){
             chargestationbalance=true;
-            drivetrain.setbrake(true);
+            driveTrain.setbrake(true);
             Speedvar=0;}
         
             else {
                 setpoint = 0;
         
                 // get sensor position
-                Double sensorPosition = drivetrain.m_gyro.getAngle();
+                Double sensorPosition = driveTrain.m_gyro.getYComplementaryAngle();
         
                 // calculations
                 berror = setpoint - sensorPosition;
@@ -51,7 +52,7 @@ public class Balancing {
                 Double outputSpeed = bkP * berror + bkI * errorSum + bkD * errorRate;
         
                 // output to motors
-                Speedvar=(-1*outputSpeed);
+                Speedvar=(outputSpeed);
         
                 // update last- variables
                 lastTimestamp = Timer.getFPGATimestamp();

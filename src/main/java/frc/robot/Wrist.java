@@ -9,7 +9,7 @@ import com.revrobotics.CANSparkMax;
 
 
 public class Wrist{
-    public double EkP = 0.035;
+    public double EkP = 0.06;
     private final double EkI = 0.05;
    private final double EkD = 0.001;
     private final double EiLimit = 0;

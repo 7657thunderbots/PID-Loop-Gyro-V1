@@ -13,13 +13,14 @@ public class Auto2_balance{
      private DriveTrain drivetrain;
      private Balancing balancing;
      private final Timer timer = new Timer();
-    
+    private turnadjust turnadjust;
      public Auto2_balance(){
     balancing = new Balancing();
     timer.reset();
     timer.start();
   }
      public void Run_Auto2_balance(){
+     turnadjust.turnadjust_run();
       drivetrain.run_drive();
          if (timer.get()<2){
          balancing.Speedvar=.2;

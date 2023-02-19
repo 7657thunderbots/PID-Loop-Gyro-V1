@@ -8,6 +8,7 @@ import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 
 
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -24,7 +25,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 
 public class DriveTrain  {
-
+  
   private final WPI_TalonFX leftParent; // = new WPI_TalonFX(4);
   private final WPI_TalonFX leftChild;// = new WPI_TalonFX(5);
   private final WPI_TalonFX rightParent;// = new WPI_TalonFX(3);
@@ -35,8 +36,8 @@ public class DriveTrain  {
 
 
   // The gyro sensor
-  public  ADIS16470_IMU m_gyro;// = new ADIS16470_IMU();
-
+   public  ADIS16470_IMU m_gyro;// = new ADIS16470_IMU();
+  
   // Odometry class for tracking robot pose
   private final DifferentialDriveOdometry m_odometry;
   private final DifferentialDriveKinematics m_kinematics;
@@ -68,14 +69,14 @@ public class DriveTrain  {
 
   /** Creates a new DriveSubsystem. */
   public DriveTrain() {
-
+    
     leftParent  = new WPI_TalonFX(4);
     leftChild   = new WPI_TalonFX(5);
     rightParent = new WPI_TalonFX(3);
     rightChild  = new WPI_TalonFX(2);
     m_drive     = new DifferentialDrive(leftParent, rightParent);
     m_gyro      = new ADIS16470_IMU();
-
+    
     // Configure Talon Motors
     rightParent.configFactoryDefault();
     leftParent.configFactoryDefault();
@@ -231,6 +232,7 @@ public void setbrake (boolean enable){
   public void tankDrive(double left, double right, boolean b) {
 
     m_drive.tankDrive(left, right, false);
+
   }
 
   /**

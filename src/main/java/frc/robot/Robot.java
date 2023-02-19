@@ -3,6 +3,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.XboxController;
@@ -10,21 +11,26 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
 public class Robot extends TimedRobot {
+  final double bkP = -0.008;
+    final double bkI = -0.005;
+    final double bkD = -0.001;
+    final double biLimit = 3;
   private static final String Balancingauto = "balancing";
   private static final String Auto2 = "Auto2";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
+ 
 
+  
     int timer;
     
     public double speedMult;
 
     private final Timer m_timer = new Timer();
   private final Timer wait = new Timer();
-    private Joystick left;
-    private Joystick right;
-    private XboxController controller2;
-    private boolean down= false;
+    public Joystick left;
+    public Joystick right;
+    public XboxController controller2;
     public boolean onchargestation= false;
     
     private DriveTrain drivetrain;
@@ -39,7 +45,7 @@ public class Robot extends TimedRobot {
 
     private Balancing balancing;
 
-   private turnadjust turn;
+  // private turnadjust turn;
     
    private Pneumatics pneumatics;
 
@@ -58,7 +64,6 @@ public class Robot extends TimedRobot {
   public void robotInit() {
 
     speedMult = .5;
-    
     m_chooser.setDefaultOption("balancing", Balancingauto);
     m_chooser.addOption("My Auto", Auto2);
     SmartDashboard.putData("Auto choices", m_chooser);
@@ -73,9 +78,9 @@ public class Robot extends TimedRobot {
 
       Hand = new Hand();
      
-    //  balancing = new Balancing();
+    balancing = new Balancing();
 
-    //  turn = new turnadjust();
+      //turn = new turnadjust();
   
      pneumatics = new Pneumatics();
 
@@ -101,12 +106,14 @@ public class Robot extends TimedRobot {
     elbow.ElbowRun();  
   SmartDashboard.getNumber("elbow", elbow.Elbowencoder.getPosition());
   SmartDashboard.getNumber("Shoulder", shoulder.shouldere.getPosition());
-     drivetrain.run_drive();
    Hand.Hand_Run();
    wrist.Wrist_Run();
+  drivetrain.run_drive();
   pneumatics.Run_Pneumatics();
-  SmartDashboard.putNumber("tilt angle",drivetrain.m_gyro.getAngle());
-  SmartDashboard.putNumber("turn angle",drivetrain.m_gyro.getXComplementaryAngle());
+  SmartDashboard.putNumber("tilt angle",drivetrain.m_gyro.getYComplementaryAngle());
+  SmartDashboard.putNumber("b",drivetrain.m_gyro.getXComplementaryAngle());
+  SmartDashboard.putNumber("Turn angle", drivetrain.m_gyro.getAngle());
+  
 }
 
 
@@ -120,9 +127,10 @@ public class Robot extends TimedRobot {
 		m_timer.start();
   }
 
+
   @Override
   public void autonomousPeriodic() {
-    DataLogManager.start();
+    // DataLogManager.start();
     switch (m_autoSelected) {
       case Auto2:
         
@@ -131,17 +139,20 @@ public class Robot extends TimedRobot {
       default:
       auto2_balance.Run_Auto2_balance();
         break;
-    }
+     }
     // if (m_timer.get()<3){
     // }
     //  else{
     //    balancing.BalancingRun();
     //  }
 
-     turn.turnadjust_run();
-     drivetrain.tankDrive ( -turn.turnerror + balancing.Speedvar, turn.turnerror+ balancing.Speedvar, false);
+     //turn.turnadjust_run();
+     //drivetrain.tankDrive ( -turn.turnerror + balancing.Speedvar, turn.turnerror+ balancing.Speedvar, false);
 
    }
+
+
+
 
 @Override
 public void teleopInit(){
@@ -150,8 +161,8 @@ public void teleopInit(){
 @Override
   public void teleopPeriodic() {
     DataLogManager.start();
+    
     //elbow.ElbowRun();
-    drivetrain.tankDrive(right.getY() * speedMult, left.getY() * speedMult, false);
     
       // // Hand controlled by left and right triggers
        if (controller2.getPOV()==90) {
@@ -166,44 +177,65 @@ public void teleopInit(){
         }
       
       if (controller2.getAButton()) {
-        //pneumatics.doubleSolenoid1.set(DoubleSolenoid.Value.kForward);
-        // shoulder.Ssetpoint=5;
-        // wrist.Wsetpoint=10;
-        elbow.Esetpoint = -35;
+        elbow.Esetpoint=-23;
         elbow.EkP=0.05;
         } 
        else if (controller2.getBButton()) {
+        wrist.Wsetpoint=0;
         elbow.EkP=0.005;
         elbow.Esetpoint = 0;
+        shoulder.Ssetpoint=0;
         //pneumatics.doubleSolenoid1.set(DoubleSolenoid.Value.kReverse);
         // wrist.Wsetpoint=0;
         // shoulder.Ssetpoint=0;
       }
-      
+      if (controller2.getRightBumper()){
+        elbow.Esetpoint=-27;
+        elbow.EkP=0.05;
+        //drivetrain.m_gyro.reset();
+        
+      }
      
-      
+      if (controller2.getLeftBumper()){
+        wrist.Wsetpoint= 5;
+      }
       // if (elbow.Esetpoint==elbow.Elbowencoder.getPosition()){
       // Hand.hsetpoint=0;
       // }
 
       
-    
-        
+        if (controller2.getXButtonPressed()){
+          balancing.BalancingRun();
+          drivetrain.tankDrive ( balancing.Speedvar, balancing.Speedvar, false);
+
+        }
+        else{
+          drivetrain.tankDrive(right.getY() * speedMult, left.getY() * speedMult, false);
+        }
+
+        if (controller2.getBackButton()){
+          drivetrain.m_gyro.reset();
+        }
       
-       
+       //high cone
        if (controller2.getYButton()) {
-          shoulder.Ssetpoint = 120;
+          elbow.Esetpoint=-39.071121;
+        shoulder.Ssetpoint = 150.377;
+        elbow.EkP=0.05;
          } 
          
-         else if (controller2.getXButton()) {
-          shoulder.Ssetpoint = 0;
-        }
+         
        
        if(controller2.getPOV()==0){
          wrist.Wsetpoint=0;
           }else if (controller2.getPOV()==180) {
-         wrist.Wsetpoint=-20;
-        }
-    }
-  
+         wrist.Wsetpoint=-20;   }
+      
+      if (left.getTrigger()){
+        Hand.hsetpoint=0;
+      }
+      if (right.getTrigger()){
+        Hand.hsetpoint=-20;
+      }   
+}
 }
