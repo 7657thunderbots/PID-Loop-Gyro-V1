@@ -56,7 +56,7 @@ public class DriveTrain  {
    */
   final int kUnitsPerRevolution = 2048; /* this is constant for Talon FX */
   private final int kCountsPerRev = 2048;  //Encoder counts per revolution of the motor shaft.
-  private final double kSensorGearRatio = 1; //Gear ratio is the ratio between the *encoder* and the wheels.  On the AndyMark drivetrain, encoders mount 1:1 with the gearbox shaft.
+  private final double kSensorGearRatio = 8.45; //Gear ratio is the ratio between the *encoder* and the wheels.  On the AndyMark drivetrain, encoders mount 1:1 with the gearbox shaft.
   private final double kGearRatio = 10.71; //Switch kSensorGearRatio to this gear ratio if encoder is on the motor instead of on the gearbox.
   private final double kWheelRadiusInches = 3;
   private final int k100msPerSecond = 10;
@@ -285,7 +285,7 @@ public void setbrake (boolean enable){
    * @return the robot's heading in degrees, from -180 to 180
    */
   public double getHeading() {
-    return m_gyro.getYComplementaryAngle();
+    return m_gyro.getAngle();
   }
 
     /**
@@ -313,5 +313,7 @@ public void setbrake (boolean enable){
     double positionMeters = wheelRotations * (2 * Math.PI * Units.inchesToMeters(kWheelRadiusInches));
     return positionMeters;
   }
+public void arcadeDrive(double d, double e, boolean b) {
+}
 
 }

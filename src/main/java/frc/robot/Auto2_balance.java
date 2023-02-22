@@ -13,45 +13,49 @@ public class Auto2_balance{
      private DriveTrain drivetrain;
      private Balancing balancing;
      private final Timer timer = new Timer();
-    private turnadjust turnadjust;
+    //private turnadjust turnadjust;
+    private boolean placed = false;
+  
      public Auto2_balance(){
-    balancing = new Balancing();
     timer.reset();
     timer.start();
-  }
+    double dsensorPosition=0;
+     }
      public void Run_Auto2_balance(){
-     turnadjust.turnadjust_run();
+     //turnadjust.turnadjust_run();
       drivetrain.run_drive();
-         if (timer.get()<2){
-         balancing.Speedvar=.2;
-          // get sensor position
-  //       double dsensorPosition = drivetrain.getAverageEncoderDistance() ;
-  //       // calculations
-  //       double error = setpoint - dsensorPosition;
-  //       double dt = Timer.getFPGATimestamp() - lastTimestamp;
+         // if (timer.get()<2){
+         // balancing.Speedvar=.2;
+         if (placed==false){
+         // get sensor position
+        double dsensorPosition = drivetrain.getAverageEncoderDistance() ;
+        // calculations
+        double error = setpoint - dsensorPosition;
+        double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-  //       if (Math.abs(error) < aiLimit) {
-  //         errorSum += error * dt;
-  //       }
+        if (Math.abs(error) < aiLimit) {
+          errorSum += error * dt;
+        }
 
-  //       double errorRate = (error - lastError) / dt;
+        double errorRate = (error - lastError) / dt;
 
-  //       double outputSpeed = akP * error + akI * errorSum + akD * errorRate;
+        double outputSpeed = akP * error + akI * errorSum + akD * errorRate;
 
-  //       // output to motors
-  //       balancing.Speedvar = outputSpeed;
+        // output to motors
+        balancing.Speedvar = (-1*outputSpeed);
 
 
-  //       // update last- variables
-  //       lastTimestamp = Timer.getFPGATimestamp();
-  //       lastError = error;
-  //       if (dsensorPosition==5){
-  //         onchargestation=true;
-  //         errorSum = 0;
-  //         lastTimestamp = 0;
-  //         lastError = 0;
+        // update last- variables
+        lastTimestamp = Timer.getFPGATimestamp();
+        lastError = error;
+        if (dsensorPosition<5){
+          placed=true;
+          errorSum = 0;
+          lastTimestamp = 0;
+          lastError = 0;
 
          }
+      }
      
     else {
     balancing.BalancingRun();

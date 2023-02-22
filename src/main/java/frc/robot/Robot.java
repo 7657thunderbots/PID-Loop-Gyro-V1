@@ -3,7 +3,6 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.XboxController;
@@ -12,14 +11,25 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
 public class Robot extends TimedRobot {
   final double bkP = -0.008;
-    final double bkI = -0.005;
-    final double bkD = -0.001;
+     final double bkI = -0.005;
+     final double bkD = -0.001;
+    // final double bkI = -0.00;
+    // final double bkD = -0.00;
     final double biLimit = 3;
-  private static final String Balancingauto = "balancing";
-  private static final String Auto2 = "Auto2";
+    double setpoint = 0;
+    double errorSum = 0;
+    double lastTimestamp = 0;
+    double lastError = 0;
+    private double Speedvar=0.0;
+    private double turnerror =0.0;
+    double berror=0;
+    double errorRate=0;
+  
+
+  private static final String kDefaultAuto = "Default";
+  private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
- 
 
   
     int timer;
@@ -27,7 +37,6 @@ public class Robot extends TimedRobot {
     public double speedMult;
 
     private final Timer m_timer = new Timer();
-  private final Timer wait = new Timer();
     public Joystick left;
     public Joystick right;
     public XboxController controller2;
@@ -43,7 +52,7 @@ public class Robot extends TimedRobot {
 
     private Shoulder shoulder;
 
-    private Balancing balancing;
+   // private Balancing balancing;
 
   // private turnadjust turn;
     
@@ -57,15 +66,16 @@ public class Robot extends TimedRobot {
 
    private Auto3 auto3;
    
+   private Balancing balancing;
 
    private final double kDriveTick2Feet = 1.0 / 128 * 6 * Math.PI / 12;
 
     @Override
   public void robotInit() {
 
-    speedMult = .5;
-    m_chooser.setDefaultOption("balancing", Balancingauto);
-    m_chooser.addOption("My Auto", Auto2);
+    speedMult = .75;
+    m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
+    m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
      // This creates our drivetrain subsystem that contains all the motors and motor control code
      drivetrain = new DriveTrain();
@@ -78,11 +88,9 @@ public class Robot extends TimedRobot {
 
       Hand = new Hand();
      
-    balancing = new Balancing();
-
-      //turn = new turnadjust();
-  
      pneumatics = new Pneumatics();
+
+     balancing = new Balancing();
 
     //  color_sensor = new color_sensor();
 
@@ -111,7 +119,7 @@ public class Robot extends TimedRobot {
   drivetrain.run_drive();
   pneumatics.Run_Pneumatics();
   SmartDashboard.putNumber("tilt angle",drivetrain.m_gyro.getYComplementaryAngle());
-  SmartDashboard.putNumber("b",drivetrain.m_gyro.getXComplementaryAngle());
+  // SmartDashboard.putNumber("b",drivetrain.m_gyro.getXComplementaryAngle());
   SmartDashboard.putNumber("Turn angle", drivetrain.m_gyro.getAngle());
   
 }
@@ -121,41 +129,97 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
+    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
     drivetrain.m_gyro.reset();
     m_timer.reset();
 		m_timer.start();
+    drivetrain.setbrake(true);
+    
   }
 
 
   @Override
   public void autonomousPeriodic() {
     // DataLogManager.start();
+    
     switch (m_autoSelected) {
-      case Auto2:
+        case kCustomAuto:
+        auto2_balance.Run_Auto2_balance();
+          break;
         
+        
+          case kDefaultAuto:
+          default:
+          
+      if (m_timer.get()<2.5){
+        Speedvar=.2;
+      }
+      // else if (drivetrain.m_gyro.getYComplementaryAngle()<3 && drivetrain.m_gyro.getYComplementaryAngle()>-3){
+      //   //chargestationbalance=true;
+      //   Speedvar=0;
+      //   drivetrain.setbrake(false);
+      // }
+    
+      //   else {
+      //         setpoint = 0;
+     
+      //       // get sensor position
+      //       Double sensorPosition = drivetrain.m_gyro.getYComplementaryAngle();
+    
+      //       // calculations
+      //       berror = setpoint - sensorPosition;
+      //       double dt = Timer.getFPGATimestamp() - lastTimestamp;
+    
+      //       if (Math.abs(berror) < biLimit) {
+      //         errorSum += berror * dt;
+      //       }
+    
+      //       errorRate = (berror - lastError) / dt;
+    
+      //       Double outputSpeed = bkP * berror + bkI * errorSum + bkD * errorRate;
+    
+      //       // output to motors
+      //       Speedvar=outputSpeed;
+    
+      //       // update last- variables
+      //       lastTimestamp = Timer.getFPGATimestamp();
+      //       lastError = berror;
+            
+      //     }
+          
+          
+      //       if (drivetrain.m_gyro.getAngle()>3){
+      //         turnerror = .05;
+      //         }
+      //         else if (drivetrain.m_gyro.getAngle()<2.5 && drivetrain.m_gyro.getAngle() >-2.5){
+      //         turnerror =0;
+      //         }
+      //         else if (drivetrain.m_gyro.getAngle()<-3){
+      //           turnerror =-.05;
+      //       }
+            
+      //       if (Speedvar>.2){
+      //         Speedvar=.2;
+      //         }
+      //         if (Speedvar<-.2){
+      //           Speedvar=-.2;}
+    
+      //          double directionL= Speedvar;
+      //          double directionR= Speedvar;
+    
+      //          drivetrain.tankDrive (-turnerror+directionL,turnerror+directionR, false);
         break;
-      case Balancingauto:
-      default:
-      auto2_balance.Run_Auto2_balance();
-        break;
-     }
-    // if (m_timer.get()<3){
-    // }
-    //  else{
-    //    balancing.BalancingRun();
-    //  }
-
-     //turn.turnadjust_run();
-     //drivetrain.tankDrive ( -turn.turnerror + balancing.Speedvar, turn.turnerror+ balancing.Speedvar, false);
-
-   }
+      }
+    
+    }
 
 
 
 
 @Override
 public void teleopInit(){
+drivetrain.setbrake(true);
 } 
 
 @Override
@@ -190,7 +254,7 @@ public void teleopInit(){
         // shoulder.Ssetpoint=0;
       }
       if (controller2.getRightBumper()){
-        elbow.Esetpoint=-27;
+        elbow.Esetpoint=-28; 
         elbow.EkP=0.05;
         //drivetrain.m_gyro.reset();
         
@@ -204,14 +268,56 @@ public void teleopInit(){
       // }
 
       
-        if (controller2.getXButtonPressed()){
-          balancing.BalancingRun();
-          drivetrain.tankDrive ( balancing.Speedvar, balancing.Speedvar, false);
+        if (controller2.getXButton()){
+          setpoint = 0;
+     
+            // get sensor position
+            Double sensorPosition = drivetrain.m_gyro.getYComplementaryAngle();
+    
+            // calculations
+            berror = setpoint - sensorPosition;
+            double dt = Timer.getFPGATimestamp() - lastTimestamp;
+    
+            if (Math.abs(berror) < biLimit) {
+              errorSum += berror * dt;
+            }
+    
+            errorRate = (berror - lastError) / dt;
+    
+            Double outputSpeed = bkP * berror + bkI * errorSum + bkD * errorRate;
+    
+            // output to motors
+            Speedvar=outputSpeed;
+    
+            // update last- variables
+            lastTimestamp = Timer.getFPGATimestamp();
+            lastError = berror;
+            
+          
+            if (Speedvar>.2){
+              Speedvar=.2;
+              }
+            if (Speedvar<-.2){
+                Speedvar=-.2;}
+    
+               double directionL= Speedvar;
+               double directionR= Speedvar;
+    
+               drivetrain.tankDrive (directionL,directionR, false);
 
-        }
-        else{
-          drivetrain.tankDrive(right.getY() * speedMult, left.getY() * speedMult, false);
-        }
+          }
+          else if(left.getTrigger()){
+            drivetrain.arcadeDrive(left.getY()*speedMult,right.getX()*speedMult, false);
+          }
+        
+        else {
+            drivetrain.tankDrive(right.getY() * speedMult, left.getY() * speedMult, false);
+
+          }
+            
+            
+      
+      
 
         if (controller2.getBackButton()){
           drivetrain.m_gyro.reset();
@@ -231,11 +337,11 @@ public void teleopInit(){
           }else if (controller2.getPOV()==180) {
          wrist.Wsetpoint=-20;   }
       
-      if (left.getTrigger()){
-        Hand.hsetpoint=0;
-      }
+      // if (left.getTrigger()){
+      //   Hand.hsetpoint=0;
+      // }
       if (right.getTrigger()){
-        Hand.hsetpoint=-20;
+        speedMult = 1;
       }   
 }
 }
