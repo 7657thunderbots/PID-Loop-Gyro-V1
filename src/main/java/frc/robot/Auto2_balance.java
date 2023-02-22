@@ -23,7 +23,6 @@ public class Auto2_balance{
      }
      public void Run_Auto2_balance(){
      //turnadjust.turnadjust_run();
-      drivetrain.run_drive();
          // if (timer.get()<2){
          // balancing.Speedvar=.2;
          if (placed==false){
