@@ -24,6 +24,19 @@ public class Robot extends TimedRobot {
     private double turnerror =0.0;
     double berror=0;
     double errorRate=0;
+
+
+
+    final double akP = 0.5;
+    final double akI = 0.05;
+ final double akD = 0.0;
+ final double aiLimit = 0;
+   public double dsetpoint=0;
+   private double derrorSum = 0;
+   private double dlastError=0;
+    private double dlastTimestamp = 0;
+    double dsensorPosition=0;
+
   
 
   private static final String kDefaultAuto = "Default";
@@ -31,6 +44,7 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
+  private boolean placed ;
   
     int timer;
     
@@ -42,7 +56,7 @@ public class Robot extends TimedRobot {
     public XboxController controller2;
     public boolean onchargestation= false;
     
-    private DriveTrain drivetrain;
+    public DriveTrain drivetrain;
     
     private Hand Hand;
 
@@ -72,12 +86,13 @@ public class Robot extends TimedRobot {
 
     @Override
   public void robotInit() {
-
+    placed = false;
     speedMult = .75;
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
      // This creates our drivetrain subsystem that contains all the motors and motor control code
+     
      drivetrain = new DriveTrain();
       
      elbow = new Elbow();
@@ -90,20 +105,20 @@ public class Robot extends TimedRobot {
      
      pneumatics = new Pneumatics();
 
-     balancing = new Balancing();
+    balancing = new Balancing();
 
     //  color_sensor = new color_sensor();
 
     //  auto1 = new Auto1();
     
-     auto2_balance = new Auto2_balance();
+    // auto2_balance = new Auto2_balance();
     
     //  auto3 = new Auto3();
 
     left = new Joystick(0);
 		right = new Joystick(1);
 		controller2 = new XboxController(2);
-    drivetrain.m_gyro.reset();
+   drivetrain.m_gyro.reset();
   }
 
   
@@ -117,12 +132,15 @@ public class Robot extends TimedRobot {
    Hand.Hand_Run();
    wrist.Wrist_Run();
   drivetrain.run_drive();
+  drivetrain.getAverageEncoderDistance();
   pneumatics.Run_Pneumatics();
   SmartDashboard.putNumber("tilt angle",drivetrain.m_gyro.getYComplementaryAngle());
+  SmartDashboard.putNumber("foward distance", drivetrain.getAverageEncoderDistance());
   // SmartDashboard.putNumber("b",drivetrain.m_gyro.getXComplementaryAngle());
   SmartDashboard.putNumber("Turn angle", drivetrain.m_gyro.getAngle());
+  SmartDashboard.putNumber("Output to drive", auto2_balance.outputSpeed);
+  }
   
-}
 
 
   
@@ -142,77 +160,100 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     // DataLogManager.start();
-    
+    // auto2_balance.Run_Auto2_balance();
     switch (m_autoSelected) {
         case kCustomAuto:
-        auto2_balance.Run_Auto2_balance();
+        // auto2_balance.Run_Auto2_balance();
           break;
         
         
           case kDefaultAuto:
           default:
           
-      if (m_timer.get()<2.5){
-        Speedvar=.2;
+          double dt = Timer.getFPGATimestamp() - lastTimestamp;
+    
+          if (placed==false){
+           // calculations
+           double derror = dsetpoint -  drivetrain.avencoder;
+           if (Math.abs(derror) < aiLimit) {
+            derrorSum += derror * dt;
+           }
+   
+           double derrorRate = (derror - dlastError) / dt;
+   
+           double doutputSpeed = akP * derror + akI * derrorSum + akD * derrorRate;
+          
+           // output to motors
+          double Speedvar = doutputSpeed;
+           // update last- variables
+           lastTimestamp = Timer.getFPGATimestamp();
+           dlastError = derror;
+           
+           if ((dsensorPosition<.1)){
+             placed=true;
+             derrorSum = 0;
+             lastTimestamp = 0;
+             dlastError = 0;
+            }
+
+      else if (drivetrain.m_gyro.getYComplementaryAngle()<3 && drivetrain.m_gyro.getYComplementaryAngle()>-3){
+        //chargestationbalance=true;
+        Speedvar=0;
+        drivetrain.setbrake(false);
       }
-      // else if (drivetrain.m_gyro.getYComplementaryAngle()<3 && drivetrain.m_gyro.getYComplementaryAngle()>-3){
-      //   //chargestationbalance=true;
-      //   Speedvar=0;
-      //   drivetrain.setbrake(false);
-      // }
     
-      //   else {
-      //         setpoint = 0;
+        else {
+              setpoint = 0;
      
-      //       // get sensor position
-      //       Double sensorPosition = drivetrain.m_gyro.getYComplementaryAngle();
+            // get sensor position
+            Double sensorPosition = drivetrain.m_gyro.getYComplementaryAngle();
     
-      //       // calculations
-      //       berror = setpoint - sensorPosition;
-      //       double dt = Timer.getFPGATimestamp() - lastTimestamp;
-    
-      //       if (Math.abs(berror) < biLimit) {
-      //         errorSum += berror * dt;
-      //       }
-    
-      //       errorRate = (berror - lastError) / dt;
-    
-      //       Double outputSpeed = bkP * berror + bkI * errorSum + bkD * errorRate;
-    
-      //       // output to motors
-      //       Speedvar=outputSpeed;
-    
-      //       // update last- variables
-      //       lastTimestamp = Timer.getFPGATimestamp();
-      //       lastError = berror;
+            // calculations
+            berror = setpoint - sensorPosition;
             
-      //     }
+            if (Math.abs(berror) < biLimit) {
+              errorSum += berror * dt;
+            }
+    
+            errorRate = (berror - lastError) / dt;
+    
+            Double outputSpeed = bkP * berror + bkI * errorSum + bkD * errorRate;
+    
+            // output to motors
+            Speedvar=outputSpeed;
+    
+            // update last- variables
+            lastTimestamp = Timer.getFPGATimestamp();
+            lastError = berror;
+            
+          }
           
           
-      //       if (drivetrain.m_gyro.getAngle()>3){
-      //         turnerror = .05;
-      //         }
-      //         else if (drivetrain.m_gyro.getAngle()<2.5 && drivetrain.m_gyro.getAngle() >-2.5){
-      //         turnerror =0;
-      //         }
-      //         else if (drivetrain.m_gyro.getAngle()<-3){
-      //           turnerror =-.05;
-      //       }
+            if (drivetrain.m_gyro.getAngle()>3){
+              turnerror = .05;
+              }
+              else if (drivetrain.m_gyro.getAngle()<2.5 && drivetrain.m_gyro.getAngle() >-2.5){
+              turnerror =0;
+              }
+              else if (drivetrain.m_gyro.getAngle()<-3){
+                turnerror =-.05;
+            }
             
-      //       if (Speedvar>.2){
-      //         Speedvar=.2;
-      //         }
-      //         if (Speedvar<-.2){
-      //           Speedvar=-.2;}
+            if (Speedvar>.2){
+              Speedvar=.2;
+              }
+              if (Speedvar<-.2){
+                Speedvar=-.2;}
     
-      //          double directionL= Speedvar;
-      //          double directionR= Speedvar;
+               double directionL= Speedvar;
+               double directionR= Speedvar;
     
-      //          drivetrain.tankDrive (-turnerror+directionL,turnerror+directionR, false);
+               drivetrain.tankDrive (-turnerror+directionL,turnerror+directionR, false);
         break;
       }
     
     }
+  }
 
 
 

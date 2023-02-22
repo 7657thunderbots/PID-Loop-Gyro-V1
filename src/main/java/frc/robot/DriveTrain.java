@@ -67,6 +67,8 @@ public class DriveTrain  {
   final NeutralMode kBrakeMode = NeutralMode.Brake;
   private final Pose2d start_pos = new Pose2d(1.5,6.5,Rotation2d.fromDegrees(0));
 
+  public double avencoder=0;
+
   /** Creates a new DriveSubsystem. */
   public DriveTrain() {
     
@@ -110,6 +112,7 @@ public class DriveTrain  {
     
     m_kinematics = new DifferentialDriveKinematics(chassiswheelbase);
 
+  
 
     m_field = new Field2d();
     m_field.setRobotPose(start_pos);
@@ -124,15 +127,17 @@ public class DriveTrain  {
       // PhysicsSim.getInstance().addTalonFX(rightParent, 0.5, 6800);
       // PhysicsSim.getInstance().addTalonFX(rightChild, 0.5, 6800);
     }
+    
   }
 
   public void run_drive() {
+  avencoder =  getAverageEncoderDistance();
     // Update the odometry in the periodic block
     m_odometry.update(
         Rotation2d.fromDegrees(getHeading()),
         getLeftDistance(),
         getRightDistance());
-
+    
     //create a transform with the position change from 0,0    
     Transform2d trans = new Transform2d(new Pose2d(), m_odometry.getPoseMeters());
     

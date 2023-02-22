@@ -1,35 +1,43 @@
  package frc.robot;
- import edu.wpi.first.wpilibj.Timer;
+ import org.opencv.core.Mat;
+
+import edu.wpi.first.wpilibj.Timer;
 public class Auto2_balance{
     final double akP = 0.5;
-     final double akI = 0.5;
-  final double akD = 0.1;
-  final double aiLimit = 5;
+     final double akI = 0.05;
+  final double akD = 0.0;
+  final double aiLimit = 0;
     public double setpoint=0;
     private double errorSum = 0;
     private double lastError=0;
      private double lastTimestamp = 0;
     public boolean onchargestation=false;
-     private DriveTrain drivetrain;
      private Balancing balancing;
      private final Timer timer = new Timer();
+     double dsensorPosition=0;
     //private turnadjust turnadjust;
     private boolean placed = false;
+    //private DriveTrain drivetrain;
+    public double outputSpeed;
+    private Robot robot;
   
      public Auto2_balance(){
     timer.reset();
     timer.start();
-    double dsensorPosition=0;
+    placed=false;
+    
+    robot = new Robot();
      }
      public void Run_Auto2_balance(){
-     //turnadjust.turnadjust_run();
+      //turnadjust.turnadjust_run();
          // if (timer.get()<2){
          // balancing.Speedvar=.2;
+         placed = false;
          if (placed==false){
          // get sensor position
-        double dsensorPosition = drivetrain.getAverageEncoderDistance() ;
+        // dsensorPosition = robot.drivetrain.getAverageEncoderDistance();
         // calculations
-        double error = setpoint - dsensorPosition;
+        double error = setpoint -  robot.drivetrain.avencoder;
         double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
         if (Math.abs(error) < aiLimit) {
@@ -38,26 +46,30 @@ public class Auto2_balance{
 
         double errorRate = (error - lastError) / dt;
 
-        double outputSpeed = akP * error + akI * errorSum + akD * errorRate;
+         outputSpeed = akP * error + akI * errorSum + akD * errorRate;
 
         // output to motors
-        balancing.Speedvar = (-1*outputSpeed);
+       double Speedvar = outputSpeed;
+       double directionL= Speedvar;
+       double directionR= Speedvar;
 
+      robot.drivetrain.tankDrive (directionL,directionR, false);
 
         // update last- variables
         lastTimestamp = Timer.getFPGATimestamp();
         lastError = error;
-        if (dsensorPosition<5){
-          placed=true;
-          errorSum = 0;
-          lastTimestamp = 0;
-          lastError = 0;
+        // if ((dsensorPosition<.1)){
+        //   placed=true;
+        //   errorSum = 0;
+        //   lastTimestamp = 0;
+        //   lastError = 0;
 
-         }
+        //  }
       }
      
     else {
-    balancing.BalancingRun();
+    //balancing.BalancingRun();
    }
+  
 }
 }
