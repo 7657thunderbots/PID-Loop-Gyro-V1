@@ -25,7 +25,7 @@ public class Robot extends TimedRobot {
     private double turnerror =0.0;
     double berror=0;
     double errorRate=0;
-
+    public final Timer wait = new Timer();
 
 
     private static final String kDefaultSpeed = "Demo";
@@ -97,7 +97,10 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
   private boolean placed ;
-  
+  private boolean waited;
+  private boolean waited2;
+  private boolean try_balancing;
+  private boolean taxied;
     int timer;
     
     public double speedMult;
@@ -106,7 +109,7 @@ public class Robot extends TimedRobot {
     public Joystick left;
     public Joystick right;
     public XboxController controller2;
-    public boolean onchargestation= false;
+    private boolean onchargestation= false;
     
     public DriveTrain drivetrain;
     
@@ -176,6 +179,7 @@ public class Robot extends TimedRobot {
 		right = new Joystick(1);
 		controller2 = new XboxController(2);
    drivetrain.m_gyro.reset();
+   pneumatics.mdoubleSolenoid.set(DoubleSolenoid.Value.kForward);
   }
 
   
@@ -209,6 +213,9 @@ public class Robot extends TimedRobot {
     m_timer.reset();
 		m_timer.start();
     drivetrain.setbrake(true);
+    pneumatics.mdoubleSolenoid.set(DoubleSolenoid.Value.kForward);
+    waited=false;
+    waited2=false;
     
   }
 
@@ -228,7 +235,13 @@ public class Robot extends TimedRobot {
           
           double dt = Timer.getFPGATimestamp() - lastTimestamp;
           double dsensorPosition = ((drivetrain.leftParent.getSelectedSensorPosition()+drivetrain.leftParent.getSelectedSensorPosition())/2);
-          if (placed==false){
+          
+          if (try_balancing==false){
+            Hand.hsetpoint=-20;
+            pneumatics.mdoubleSolenoid.set(DoubleSolenoid.Value.kForward);
+            elbow.Esetpoint=-39.071121;
+            shoulder.Ssetpoint = 150.377;
+            elbow.EkP=0.05;
            // calculations
            double derror = dsetpoint - dsensorPosition;
            if (Math.abs(derror) < aiLimit) {
@@ -251,8 +264,49 @@ public class Robot extends TimedRobot {
              lastTimestamp = 0;
              dlastError = 0;
             }
-
-      else if (drivetrain.m_gyro.getYComplementaryAngle()<3 && drivetrain.m_gyro.getYComplementaryAngle()>-3){
+          
+          if (placed == true){
+            wrist.Wsetpoint=-20;
+            wait.reset();
+            wait.start();
+            
+          }
+          if (wait.get()>.5 && placed==true){
+            waited=true;
+          }
+          if (waited==true){
+            pneumatics.mdoubleSolenoid.set(DoubleSolenoid.Value.kReverse);
+            Hand.hsetpoint=0;
+            placed=false;
+            wait.reset();
+            wait.start();
+          }
+          if (waited==true && wait.get()>.5){
+            wrist.Wsetpoint=0;
+            waited=false;
+            wait.reset();
+            wait.start();
+            waited2=true;
+          }
+          if (waited2==true && wait.get()>.5 ){
+       *  dsetpoint = 100;
+          wrist.Wsetpoint=0;
+          elbow.EkP=0.01;
+          elbow.Esetpoint = 0;
+          shoulder.Ssetpoint=0;
+          }
+        if (waited2==true && Math.abs(dsensorPosition-dsetpoint)<.3){
+         * dsetpoint=60;
+          taxied=true;
+          waited2=false;
+        }
+        if (taxied==true &&Math.abs(dsensorPosition-dsetpoint)<.3){
+          onchargestation=true;
+          try_balancing=true;
+        }   
+        }
+        if (onchargestation==true){
+      if (drivetrain.m_gyro.getYComplementaryAngle()<3 && drivetrain.m_gyro.getYComplementaryAngle()>-3){
         //chargestationbalance=true;
         Speedvar=0;
         drivetrain.setbrake(false);
@@ -281,8 +335,8 @@ public class Robot extends TimedRobot {
             // update last- variables
             lastTimestamp = Timer.getFPGATimestamp();
             lastError = berror;
-            
           }
+        }
           
           
             if (drivetrain.m_gyro.getAngle()>3){
@@ -305,8 +359,10 @@ public class Robot extends TimedRobot {
                double directionR= Speedvar;
     
                drivetrain.tankDrive (-turnerror+directionL,turnerror+directionR, false);
+              
+
         break;
-      }
+      
     
     }
   }
