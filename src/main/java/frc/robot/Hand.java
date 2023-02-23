@@ -29,10 +29,8 @@ public Hand() {
 
 }
 public void Hand_Run(){
-   if(hsetpoint>0&& wait.get()>.5){
-    hand.set(0);
-   }
-  else if(Math.abs(hsetpoint-hande.getPosition())<2) {
+   
+ if(Math.abs(hsetpoint-hande.getPosition())<1) {
     hand.set(0);
    }
    else if (Math.abs(hsetpoint-hande.getPosition())>1){

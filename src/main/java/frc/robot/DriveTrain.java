@@ -26,14 +26,15 @@ import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 
 public class DriveTrain  {
   
-  private final WPI_TalonFX leftParent; // = new WPI_TalonFX(4);
-  private final WPI_TalonFX leftChild;// = new WPI_TalonFX(5);
-  private final WPI_TalonFX rightParent;// = new WPI_TalonFX(3);
-  private final WPI_TalonFX rightChild; // = new WPI_TalonFX(2);
+  public final WPI_TalonFX leftParent; // = new WPI_TalonFX(4);
+  public final WPI_TalonFX leftChild;// = new WPI_TalonFX(5);
+  public final WPI_TalonFX rightParent;// = new WPI_TalonFX(3);
+  public final WPI_TalonFX rightChild; // = new WPI_TalonFX(2);
 
   // The robot's drive
   private final DifferentialDrive m_drive;// = new DifferentialDrive(leftParent, rightParent);
 
+  private final DifferentialDrive reg_drive;
 
   // The gyro sensor
    public  ADIS16470_IMU m_gyro;// = new ADIS16470_IMU();
@@ -77,6 +78,7 @@ public class DriveTrain  {
     rightParent = new WPI_TalonFX(3);
     rightChild  = new WPI_TalonFX(2);
     m_drive     = new DifferentialDrive(leftParent, rightParent);
+    reg_drive = new DifferentialDrive(leftParent,rightParent);
     m_gyro      = new ADIS16470_IMU();
     
     // Configure Talon Motors
@@ -239,6 +241,16 @@ public void setbrake (boolean enable){
     m_drive.tankDrive(left, right, false);
 
   }
+  public void mywatchdog() {
+
+    m_drive.feedWatchdog();
+
+  }
+
+  public void tdrive(double left, double right){
+    m_drive.tankDrive(left, right);
+  }
+  
 
   /**
    * Controls the left and right sides of the drive directly with voltages.
@@ -281,7 +293,7 @@ public void setbrake (boolean enable){
 
   /** Zeroes the heading of the robot. */
   public void zeroHeading() {
-    m_gyro.reset();
+   // m_gyro.reset();
   }
 
   /**
@@ -290,7 +302,7 @@ public void setbrake (boolean enable){
    * @return the robot's heading in degrees, from -180 to 180
    */
   public double getHeading() {
-    return m_gyro.getAngle();
+    return 0;//m_gyro.getAngle();
   }
 
     /**
