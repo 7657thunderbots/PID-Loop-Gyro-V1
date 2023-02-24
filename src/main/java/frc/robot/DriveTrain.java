@@ -88,7 +88,7 @@ public class DriveTrain  {
     rightChild.configFactoryDefault();
 
     rightParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
-    rightParent.setStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 20);
+    // rightParent.setStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 20);
     rightParent.setNeutralMode(kBrakeDurNeutral);
 
     rightChild.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
@@ -98,7 +98,7 @@ public class DriveTrain  {
     leftParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
 
     leftParent.setInverted(true);
-    leftParent.setStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 20);
+    // leftParent.setStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 20);
     leftParent.setNeutralMode(kBrakeDurNeutral);
 
     leftChild.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);

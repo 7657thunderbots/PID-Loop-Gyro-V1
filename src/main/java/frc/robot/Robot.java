@@ -79,10 +79,10 @@ public class Robot extends TimedRobot {
 
 
 
-    final double akP = 0.5;
+    final double akP = 0.2;
     final double akI = 0.05;
- final double akD = 0.0;
- final double aiLimit = 0;
+    final double akD = 0.0;
+  final double aiLimit = 0;
    public double dsetpoint=0;
    private double derrorSum = 0;
    private double dlastError=0;
@@ -101,6 +101,7 @@ public class Robot extends TimedRobot {
   private boolean waited2;
   private boolean try_balancing;
   private boolean taxied;
+  private boolean place2= false;
     int timer;
     
     public double speedMult;
@@ -145,7 +146,7 @@ public class Robot extends TimedRobot {
     speed_chooser.setDefaultOption("DemoSpeed", kDefaultSpeed);
     speed_chooser.addOption("Competition Speed", kCompetitionSpeed);
     SmartDashboard.putData("Speed choices", speed_chooser);
-    
+    place2 = false;
     placed = false;
     speedMult = .7;
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
@@ -199,6 +200,8 @@ public class Robot extends TimedRobot {
   SmartDashboard.putNumber("foward distance", drivetrain.getAverageEncoderDistance());
   //SmartDashboard.putNumber("b",drivetrain.m_gyro.getXComplementaryAngle());
   SmartDashboard.putNumber("Turn angle", drivetrain.m_gyro.getAngle());
+  SmartDashboard.putNumber("distance", dsensorPosition);
+  
   }
   
 
@@ -216,6 +219,8 @@ public class Robot extends TimedRobot {
     pneumatics.mdoubleSolenoid.set(DoubleSolenoid.Value.kForward);
     waited=false;
     waited2=false;
+    onchargestation=false;
+    try_balancing=false;
     
   }
 
@@ -232,13 +237,12 @@ public class Robot extends TimedRobot {
         
           case kDefaultAuto:
           default:
-          
+          SmartDashboard.getBoolean("wait",waited);
           double dt = Timer.getFPGATimestamp() - lastTimestamp;
-          double dsensorPosition = ((drivetrain.leftParent.getSelectedSensorPosition()+drivetrain.leftParent.getSelectedSensorPosition())/2);
           
           if (try_balancing==false){
-            Hand.hsetpoint=-20;
-            pneumatics.mdoubleSolenoid.set(DoubleSolenoid.Value.kForward);
+            // Hand.hsetpoint=-20;
+           // pneumatics.mdoubleSolenoid.set(DoubleSolenoid.Value.kForward);
             elbow.Esetpoint=-39.071121;
             shoulder.Ssetpoint = 150.377;
             elbow.EkP=0.05;
@@ -251,59 +255,60 @@ public class Robot extends TimedRobot {
            double derrorRate = (derror - dlastError) / dt;
    
            double doutputSpeed = akP * derror + akI * derrorSum + akD * derrorRate;
-          
+           drivetrain.tankDrive (doutputSpeed,doutputSpeed, false);
+           drivetrain.mywatchdog();
            // output to motors
-          double Speedvar = doutputSpeed;
+          // double Speedvar = doutputSpeed;
            // update last- variables
            lastTimestamp = Timer.getFPGATimestamp();
            dlastError = derror;
            
            if ((dsensorPosition<.1)){
              placed=true;
-             derrorSum = 0;
-             lastTimestamp = 0;
-             dlastError = 0;
+             
+            //  derrorSum = 0;
+            //  lastTimestamp = 0;
+            //  dlastError = 0;
             }
           
-          if (placed == true){
-            wrist.Wsetpoint=-20;
-            wait.reset();
-            wait.start();
-            
+          if (placed == true && elbow.Elbowencoder.getPosition()<-30){
+            // wrist.Wsetpoint=-20;
+            placed=false;
+            place2=true;
           }
-          if (wait.get()>.5 && placed==true){
+
+          if (wrist.wriste.getPosition() < -15 && place2==true ){
             waited=true;
+            place2=false;
+           
           }
           if (waited==true){
+            Hand.hsetpoint = 0;
             pneumatics.mdoubleSolenoid.set(DoubleSolenoid.Value.kReverse);
-            Hand.hsetpoint=0;
-            placed=false;
-            wait.reset();
-            wait.start();
           }
-          if (waited==true && wait.get()>.5){
-            wrist.Wsetpoint=0;
+          if (waited==true && Hand.hande.getPosition()> -3 ){
+            // wrist.Wsetpoint=0;
             waited=false;
-            wait.reset();
-            wait.start();
+            dsetpoint=2;
             waited2=true;
           }
-          if (waited2==true && wait.get()>.5 ){
-       *  dsetpoint = 100;
-          wrist.Wsetpoint=0;
+          if (waited2==true && dsensorPosition > .6){
+          dsetpoint = 2;
           elbow.EkP=0.01;
           elbow.Esetpoint = 0;
           shoulder.Ssetpoint=0;
           }
-        if (waited2==true && Math.abs(dsensorPosition-dsetpoint)<.3){
-         * dsetpoint=60;
+        if (waited2==true && Math.abs(dsensorPosition-dsetpoint)<.1){
+        //  dsetpoint=60;
           taxied=true;
           waited2=false;
         }
-        if (taxied==true &&Math.abs(dsensorPosition-dsetpoint)<.3){
+        if (taxied==true &&Math.abs(dsensorPosition-dsetpoint)<.1){
           onchargestation=true;
           try_balancing=true;
+
         }   
+        
         }
         if (onchargestation==true){
       if (drivetrain.m_gyro.getYComplementaryAngle()<3 && drivetrain.m_gyro.getYComplementaryAngle()>-3){
@@ -359,7 +364,7 @@ public class Robot extends TimedRobot {
                double directionR= Speedvar;
     
                drivetrain.tankDrive (-turnerror+directionL,turnerror+directionR, false);
-              
+              drivetrain.mywatchdog();
 
         break;
       
@@ -379,7 +384,7 @@ drivetrain.setbrake(true);
   public void teleopPeriodic() {
     DataLogManager.start();
     
-    drivetrain.setbrake(false);
+    //drivetrain.setbrake(false);
     speed_selected = speed_chooser.getSelected();
                 SmartDashboard.putString("Speed Chosen", speed_selected);
 
@@ -469,7 +474,7 @@ drivetrain.setbrake(true);
           else if(left.getTrigger()){
             drivetrain.arcadeDrive(left.getY()*speedMult,right.getX()*speedMult, false);
           }
-        else if (controller2.getAButtonPressed()){
+        else if (right.getTrigger()){
           if (autoTargeting) {
                   NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(1);        // turns off the limelight        
           } else {
@@ -553,7 +558,8 @@ drivetrain.setbrake(true);
                   autoTargeting = !autoTargeting;
           }
           else {
-                  drivetrain.tdrive(left_command, right_command);
+            //drivetrain.mywatchdog();
+            drivetrain.tdrive(left_command, right_command);
                   drivetrain.mywatchdog();
           }
   } 
