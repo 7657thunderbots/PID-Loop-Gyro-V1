@@ -266,7 +266,7 @@ public class Robot extends TimedRobot {
            lastTimestamp = Timer.getFPGATimestamp();
            dlastError = derror;
            
-           if (((Math.abs(dsetpoint-dsensorPosition))<.05)){
+           if (((Math.abs(dsetpoint-dsensorPosition))<.05&&place2==false)){
              placed=true;
              doutputSpeed =0;
             //  derrorSum = 0;
@@ -276,7 +276,7 @@ public class Robot extends TimedRobot {
             drivetrain.tdrive(doutputSpeed, doutputSpeed,false);
           
           if (placed == true && elbow.Elbowencoder.getPosition()<-30){
-            // wrist.Wsetpoint=-20;
+            wrist.Wsetpoint=-20;
             placed=false;
             place2=true;
           }
@@ -291,7 +291,7 @@ public class Robot extends TimedRobot {
             pneumatics.mdoubleSolenoid.set(DoubleSolenoid.Value.kReverse);
           }
           if (waited==true && Hand.hande.getPosition()> -3 ){
-            // wrist.Wsetpoint=0;
+             wrist.Wsetpoint=0;
             waited=false;
             dsetpoint=2;
             waited2=true;
@@ -367,8 +367,8 @@ public class Robot extends TimedRobot {
                double directionL= Speedvar;
                double directionR= Speedvar;
     
-              //  drivetrain.tankDrive (-turnerror+directionL,turnerror+directionR, false);
-              // drivetrain.mywatchdog();
+              drivetrain.tdrive (-turnerror+directionL,turnerror+directionR, false);
+               
 
         break;
       
@@ -447,7 +447,7 @@ drivetrain.setbrake(true);
             Double sensorPosition = drivetrain.m_gyro.getYComplementaryAngle();
     
             // calculations
-            berror = setpoint -0; //sensorPosition;
+            berror = setpoint - sensorPosition;
             double dt = Timer.getFPGATimestamp() - lastTimestamp;
     
             if (Math.abs(berror) < biLimit) {
@@ -474,15 +474,16 @@ drivetrain.setbrake(true);
     
                double directionL= Speedvar;
                double directionR= Speedvar;
+               drivetrain.tankDrive(directionL, directionR, false);
             }
           else if(left.getTrigger()){
             drivetrain.arcadeDrive(left.getY()*speedMult,right.getX()*speedMult, false);
           }
         else if (right.getTrigger()){
           if (autoTargeting) {
-                  NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(1);        // turns off the limelight        
+                  NetworkTableInstance.getDefault().getTable("limelight").getEntry("").setNumber(1);        // turns off the limelight        
           } else {
-                  NetworkTableInstance.getDefault().getTable("limelight").getEntry("ledMode").setNumber(3);        // turns on the limelight        
+                  NetworkTableInstance.getDefault().getTable("limelight").getEntry("").setNumber(3);        // turns on the limelight        
           }
           autoTargeting = !autoTargeting;
   } 
@@ -490,9 +491,9 @@ drivetrain.setbrake(true);
 
   if (autoTargeting && !targetSighted) {  // no target in sight so rotate and look for one.  this means that you cannot operator drive if the robot is in autoTargeting mode
           if (speed_selected == "Demo"){
-                 // drivetrain.tdrive(0.2,-0.2);
+                  drivetrain.ldrive(0.2,-0.2);
           } else {
-                  //drivetrain.tdrive(0.3,-0.3);                                                
+                  drivetrain.ldrive(0.3,-0.3);                                                
           }
           targetAimed = false;
           targetInRange = false;
@@ -562,8 +563,7 @@ drivetrain.setbrake(true);
                   autoTargeting = !autoTargeting;
           }
           else {
-            //drivetrain.mywatchdog();
-            //drivetrain.tdrive(left_command, right_command);
+            drivetrain.ldrive(left_command, right_command);
                   //drivetrain.mywatchdog();
           }
   } 

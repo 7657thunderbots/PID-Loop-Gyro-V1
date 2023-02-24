@@ -98,7 +98,7 @@ public class DriveTrain  {
     leftParent.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
 
     leftParent.setInverted(true);
-    // leftParent.setStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 20);
+    leftParent.setStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 20);
     leftParent.setNeutralMode(kBrakeDurNeutral);
 
     leftChild.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
@@ -123,7 +123,7 @@ public class DriveTrain  {
     if (RobotBase.isSimulation()) { // If our robot is simulated
       //The Robot is in Simulation.  Initialize sim code.
       // System.out.println("Simulation Mode Detected, Initializing simulated drivetrain");
-      // //m_drivetrainSimulator = new DrivebaseSimFX(leftParent, rightParent, m_gyro);
+      // m_drivetrainSimulator = new DrivebaseSimFX(leftParent, rightParent, m_gyro);
       // PhysicsSim.getInstance().addTalonFX(leftParent, 0.5, 6800);
       // PhysicsSim.getInstance().addTalonFX(leftChild, 0.5, 6800);
       // PhysicsSim.getInstance().addTalonFX(rightParent, 0.5, 6800);
@@ -182,9 +182,9 @@ public void setbrake (boolean enable){
    *
    * @return The drawn current in Amps.
    */
-  public double getDrawnCurrentAmps() {
-    return 0; // m_drivetrainSimulator.getCurrentDrawAmps();
-  }
+  // public double getDrawnCurrentAmps() {
+  //   // return m_drivetrainSimulator.getCurrentDrawAmps();
+  // }
 
   /**
    * Returns the currently-estimated pose of the robot.
@@ -252,6 +252,9 @@ public void setbrake (boolean enable){
   public void tdrive(double left, double right, boolean b){
     tdrive.tankDrive(left, right, false);
   }
+  public void ldrive(double left, double right) {
+    m_drive.tankDrive(left, right);
+  }
   
 
   /**
@@ -295,7 +298,7 @@ public void setbrake (boolean enable){
 
   /** Zeroes the heading of the robot. */
   public void zeroHeading() {
-   // m_gyro.reset();
+    m_gyro.reset();
   }
 
   /**
@@ -304,7 +307,7 @@ public void setbrake (boolean enable){
    * @return the robot's heading in degrees, from -180 to 180
    */
   public double getHeading() {
-    return 0;//m_gyro.getAngle();
+    return m_gyro.getAngle();
   }
 
     /**
