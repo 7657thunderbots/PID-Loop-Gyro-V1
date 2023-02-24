@@ -79,17 +79,17 @@ public class Robot extends TimedRobot {
 
 
 
-    final double akP = 0.2;
-    final double akI = 0.05;
+    final double akP = 0.25;
+    final double akI = 0.4;
     final double akD = 0.0;
-  final double aiLimit = 0;
+  final double aiLimit = .5;
    public double dsetpoint=0;
    private double derrorSum = 0;
    private double dlastError=0;
     private double dlastTimestamp = 0;
     double dsensorPosition=0;
 
-  
+  private double doutputSpeed;
 
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
@@ -201,7 +201,8 @@ public class Robot extends TimedRobot {
   //SmartDashboard.putNumber("b",drivetrain.m_gyro.getXComplementaryAngle());
   SmartDashboard.putNumber("Turn angle", drivetrain.m_gyro.getAngle());
   SmartDashboard.putNumber("distance", dsensorPosition);
-  
+  SmartDashboard.putNumber("output", doutputSpeed);
+  dsensorPosition=drivetrain.getAverageEncoderDistance();
   }
   
 
@@ -221,6 +222,7 @@ public class Robot extends TimedRobot {
     waited2=false;
     onchargestation=false;
     try_balancing=false;
+    dsetpoint=0;
     
   }
 
@@ -254,22 +256,24 @@ public class Robot extends TimedRobot {
    
            double derrorRate = (derror - dlastError) / dt;
    
-           double doutputSpeed = akP * derror + akI * derrorSum + akD * derrorRate;
-           drivetrain.tankDrive (doutputSpeed,doutputSpeed, false);
-           drivetrain.mywatchdog();
+            doutputSpeed = (akP * derror + akI * derrorSum + akD * derrorRate);
+           //drivetrain.tankDrive(doutputSpeed,doutputSpeed,false);
+          //  drivetrain.mywatchdog();
+          //  SmartDashboard.getNumber("output", doutputSpeed);
            // output to motors
           // double Speedvar = doutputSpeed;
            // update last- variables
            lastTimestamp = Timer.getFPGATimestamp();
            dlastError = derror;
            
-           if ((dsensorPosition<.1)){
+           if (((Math.abs(dsetpoint-dsensorPosition))<.05)){
              placed=true;
-             
+             doutputSpeed =0;
             //  derrorSum = 0;
             //  lastTimestamp = 0;
             //  dlastError = 0;
             }
+            drivetrain.tdrive(doutputSpeed, doutputSpeed,false);
           
           if (placed == true && elbow.Elbowencoder.getPosition()<-30){
             // wrist.Wsetpoint=-20;
@@ -363,8 +367,8 @@ public class Robot extends TimedRobot {
                double directionL= Speedvar;
                double directionR= Speedvar;
     
-               drivetrain.tankDrive (-turnerror+directionL,turnerror+directionR, false);
-              drivetrain.mywatchdog();
+              //  drivetrain.tankDrive (-turnerror+directionL,turnerror+directionR, false);
+              // drivetrain.mywatchdog();
 
         break;
       
@@ -486,9 +490,9 @@ drivetrain.setbrake(true);
 
   if (autoTargeting && !targetSighted) {  // no target in sight so rotate and look for one.  this means that you cannot operator drive if the robot is in autoTargeting mode
           if (speed_selected == "Demo"){
-                  drivetrain.tdrive(0.2,-0.2);
+                 // drivetrain.tdrive(0.2,-0.2);
           } else {
-                  drivetrain.tdrive(0.3,-0.3);                                                
+                  //drivetrain.tdrive(0.3,-0.3);                                                
           }
           targetAimed = false;
           targetInRange = false;
@@ -559,8 +563,8 @@ drivetrain.setbrake(true);
           }
           else {
             //drivetrain.mywatchdog();
-            drivetrain.tdrive(left_command, right_command);
-                  drivetrain.mywatchdog();
+            //drivetrain.tdrive(left_command, right_command);
+                  //drivetrain.mywatchdog();
           }
   } 
   else {

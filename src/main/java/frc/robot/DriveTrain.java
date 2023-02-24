@@ -34,7 +34,7 @@ public class DriveTrain  {
   // The robot's drive
   private final DifferentialDrive m_drive;// = new DifferentialDrive(leftParent, rightParent);
 
-  private final DifferentialDrive reg_drive;
+  private final DifferentialDrive tdrive;
 
   // The gyro sensor
    public  ADIS16470_IMU m_gyro;// = new ADIS16470_IMU();
@@ -78,7 +78,7 @@ public class DriveTrain  {
     rightParent = new WPI_TalonFX(3);
     rightChild  = new WPI_TalonFX(2);
     m_drive     = new DifferentialDrive(leftParent, rightParent);
-    reg_drive = new DifferentialDrive(leftParent,rightParent);
+    tdrive = new DifferentialDrive(leftParent,rightParent);
     m_gyro      = new ADIS16470_IMU();
     
     // Configure Talon Motors
@@ -133,7 +133,9 @@ public class DriveTrain  {
   }
 
   public void run_drive() {
-  avencoder =  getAverageEncoderDistance();
+    
+   
+    avencoder =  getAverageEncoderDistance();
     // Update the odometry in the periodic block
     m_odometry.update(
         Rotation2d.fromDegrees(getHeading()),
@@ -247,8 +249,8 @@ public void setbrake (boolean enable){
 
   }
 
-  public void tdrive(double left, double right){
-    m_drive.tankDrive(left, right);
+  public void tdrive(double left, double right, boolean b){
+    tdrive.tankDrive(left, right, false);
   }
   
 
